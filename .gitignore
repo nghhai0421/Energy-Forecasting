@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+.idea/
+.env
+.env.*
+
+# Local course material, notes, agent instructions and generated results.
+/Lecture slides/
+/docs/
+AGENTS.md
+/outputs/

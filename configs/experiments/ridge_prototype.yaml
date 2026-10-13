@@ -1,0 +1,20 @@
+run_name: ridge_prototype
+
+model: ridge_regression
+
+data:
+  path: Dataset/Realisierter_Stromverbrauch_201901010000_202501010000_Stunde.csv
+  timestamp_column: Date from
+  target_column: Grid load [MWh] calculated resolutions
+  covariates: []
+
+forecast:
+  lookback: 24
+  horizon: 24
+  step_length: 24          # Refit and evaluate a new forecast every 48 observations.
+
+split:
+  test_fraction: 0.2       # 20% of the full series.
+  train_window_fraction: 0.7 # Use 70% of development as each fixed CV/test training window.
+
+output_root: outputs
