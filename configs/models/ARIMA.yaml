@@ -1,0 +1,14 @@
+order: [1, 1, 1]
+
+hpo:
+  n_trials: 8
+  seed: 42
+  orders:                 # Candidate (p, d, q) orders for Optuna CategoricalDistribution
+    - [1, 0, 0]
+    - [1, 1, 0]
+    - [0, 1, 1]
+    - [1, 1, 1]
+    - [2, 1, 0]
+    - [2, 1, 1]
+    - [4, 1, 0]
+    - [4, 1, 1]

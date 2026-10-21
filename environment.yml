@@ -15,4 +15,5 @@ dependencies:
   - pip:
       - --extra-index-url=https://download.pytorch.org/whl/cpu
       - sktime==1.2.0
+      - pmdarima
       - torch==2.14.1+cpu

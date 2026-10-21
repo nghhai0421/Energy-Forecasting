@@ -26,6 +26,8 @@ def main():
     model_name = read_config(args.exp_cfg)["model"]
     if model_name == "ridge_regression":
         from src.models.ridge_regression.run import run_experiment
+    elif model_name == "ARIMA":
+        from src.models.ARIMA.run import run_experiment
     elif model_name in {"itransformer", "tabpfn_ts"}:
         raise NotImplementedError(f"{model_name} is still a placeholder.")
     else:
