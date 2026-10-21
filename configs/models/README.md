@@ -24,6 +24,13 @@ Normal evaluation uses the fixed parameters and does not run HPO. Use
 `hpo.alpha`, `hpo.n_trials`, and `hpo.seed` directly from the YAML. The Ridge
 parameter mapping, TPE sampler, and RMSE objective remain in the model code.
 
+ARIMA keeps its default order `(1, 1, 1)` and fitting options in its runner.
+An optional YAML `order: [2, 1, 0]` overrides the default for evaluation.
+`configs/models/ARIMA.yaml` contains only its HPO settings: `n_trials`, `seed`,
+and a list of candidate `(p, d, q)` orders. HPO results and JSON selections
+record the effective order and fitting options; the runner restores the order
+tuple when loading a saved selection.
+
 With `--hpo-run`, evaluation uses the saved selected parameters. An HPO
 selection is an output artifact, not another config file. Outputs record
 the effective parameters and whether they came from defaults, YAML, or HPO.

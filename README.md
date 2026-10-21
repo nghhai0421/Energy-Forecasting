@@ -1,7 +1,8 @@
 # Energy Forecasting
 
-Compare models for hourly energy forecasting. Ridge regression is the current
-working example. Further models can be added as single-file runners.
+Compare energy forecasting models with single-file runners. Ridge regression
+and ARIMA are implemented. Forecast horizons and steps are in observations;
+their duration depends on the dataset frequency.
 
 ## Setup
 
@@ -17,7 +18,7 @@ Without Conda, use Python 3.11:
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install numpy pandas scikit-learn matplotlib optuna pyyaml tzdata sktime==1.2.0
+python -m pip install numpy pandas scikit-learn matplotlib optuna pyyaml tzdata pmdarima sktime==1.2.0
 python -m pip install torch==2.14.1+cpu --index-url https://download.pytorch.org/whl/cpu
 ```
 
@@ -55,6 +56,40 @@ Use `--stage all` for HPO followed by evaluation. HPO saves to
 `outputs/hpo_runs/`; evaluation saves to `outputs/runs/`. Use `--output-root`
 and `--run-name` to override these settings. Saved HPO runs use plain parameter
 names and `hpo_trials.csv`; older Ridge output formats are no longer supported.
+
+## Run ARIMA
+
+Evaluate the function's default order `(1, 1, 1)` without HPO or a model YAML:
+
+```powershell
+python main.py --exp-cfg configs/experiments/ARIMA.yaml
+```
+
+Tune the candidate orders from the model YAML:
+
+```powershell
+python main.py --stage all --exp-cfg configs/experiments/ARIMA.yaml --mdl-cfg configs/models/ARIMA.yaml
+```
+
+The supplied ARIMA experiment reads `Dataset/preprocessed_dataset_1y.csv`:
+35,136 observations at 15-minute intervals, with no duplicate timestamps or
+missing targets. Its horizon and step of 24 both represent six hours. The data
+is not resampled. Use equivalent data periods, frequencies, and evaluation
+settings when comparing models.
+
+ARIMA reads a comma-separated processed CSV with UTC timestamps and a numeric
+target. It uses the full fold training window; Ridge's `lookback` setting does
+not apply. ARIMA's native checkpoint is saved as `checkpoints/model.joblib`,
+and its prediction, metric, and HPO files follow the common result contract.
+
+Run the focused integration tests on a small synthetic series:
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
+They include default/override evaluation, a one-trial HPO smoke test, saved-HPO
+reuse, checkpoints, plots, and CLI dispatch for both models.
 
 ## Add a model
 

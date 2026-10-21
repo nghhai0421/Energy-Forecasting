@@ -6,12 +6,12 @@ data:
   path: Dataset/preprocessed_dataset_1y.csv
   timestamp_column: timestamp_utc
   target_column: grid load [MWh]
+  frequency: 15min
   covariates: []
 
 forecast:
-  lookback: 24
-  horizon: 24
-  step_length: 24          # Refit and evaluate a new forecast every 24 observations.
+  horizon: 24             # Six hours of 15-minute observations.
+  step_length: 24         # Refit every six hours.
 
 split:
   test_fraction: 0.2       # 20% of the full series.

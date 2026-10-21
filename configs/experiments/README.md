@@ -36,3 +36,9 @@ The experiment YAML remains necessary when no model YAML or HPO is used.
 The Ridge reader handles the supplied SMARD CSV and daylight-saving timestamps.
 sktime uses observation positions internally; outputs restore the timestamps.
 Nonempty covariates currently raise an error.
+
+`ARIMA.yaml` uses the processed, comma-separated one-year dataset with
+`timestamp_utc` and `grid load [MWh]`. Its observations are 15 minutes apart,
+so a horizon or step of 24 means six hours. ARIMA uses its full fold training
+window and does not require `forecast.lookback`. The `data.frequency` field
+records the supplied data frequency; it does not resample the data.
