@@ -15,6 +15,6 @@ forecast:
 
 split:
   test_fraction: 0.2       # 20% of the full series.
-  train_window_fraction: 0.7 # Use 70% of development as each fixed CV/test training window.
+  train_window_fraction: 0.8 # Use 80% of development as each fixed CV/test training window.
 
 output_root: outputs

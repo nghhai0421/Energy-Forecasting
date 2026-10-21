@@ -3,7 +3,7 @@ run_name: ridge_prototype
 model: ridge_regression
 
 data:
-  path: Dataset/Realisierter_Stromverbrauch_201901010000_202501010000_Stunde.csv
+  path: Dataset/energy_hourly.csv
   timestamp_column: Date from
   target_column: Grid load [MWh] calculated resolutions
   covariates: []

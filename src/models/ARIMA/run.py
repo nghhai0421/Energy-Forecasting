@@ -21,9 +21,15 @@ from src.outputs.output import save_run_outputs
 from src.outputs.plot import create_forecast_plots, create_tuning_plot
 
 
-def run_experiment(exp_cfg, mdl_cfg=None, output_root=None, run_name=None,
+def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
                    stage="evaluate", hpo_run=None):
-    """Run ARIMA defaults, YAML overrides, or HPO parameters; return saved run paths."""
+    """Fit/evaluate ARIMA or tune its parameters.
+
+    Input: experiment YAML path, optional model YAML path and run name.
+    stage: evaluate (default), hpo, or all; hpo_run: saved HPO folder for evaluate.
+
+    Output: run folder Path; all returns a dict with hpo and evaluation Paths.
+    """
     if stage not in {"all", "hpo", "evaluate"}:
         raise ValueError(f"Unknown run stage: {stage}")
     if stage != "evaluate" and hpo_run is not None:
@@ -36,7 +42,7 @@ def run_experiment(exp_cfg, mdl_cfg=None, output_root=None, run_name=None,
     dataset = experiment["data"]
     horizon = experiment["forecast"]["horizon"]
     step = experiment["forecast"]["step_length"]
-    output_root = output_root if output_root is not None else experiment["output_root"]
+    output_root = experiment["output_root"]
     run_name = run_name if run_name is not None else experiment["run_name"]
 
     if dataset.get("covariates"):

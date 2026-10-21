@@ -17,8 +17,6 @@ def main():
                         help="Evaluate defaults or a saved HPO result (default), run HPO, or both.")
     parser.add_argument("--hpo-run", type=Path,
                         help="Optional HPO run directory to use with --stage evaluate.")
-    parser.add_argument("--output-root", type=Path,
-                        help="Override the parent folder for hpo_runs/ and runs/.")
     parser.add_argument("--run-name", help="Override the run name.")
     args = parser.parse_args()
     if args.stage != "evaluate" and args.hpo_run is not None:
@@ -38,7 +36,7 @@ def main():
 
     # Run Experiment
     run_experiment(
-        args.exp_cfg, args.mdl_cfg, args.output_root, args.run_name,
+        args.exp_cfg, args.mdl_cfg, run_name=args.run_name,
         stage=args.stage, hpo_run=args.hpo_run,
     )
 

@@ -1,8 +1,17 @@
 # Energy Forecasting
 
-Compare energy forecasting models with single-file runners. Ridge regression
-and ARIMA are implemented. Forecast horizons and steps are in observations;
-their duration depends on the dataset frequency.
+A config-driven experiment setup for comparing models for Germany's electricity
+demand forecasting. Run experiments through YAML configs, using a common Optuna
+optimizer for HPO and rolling-window splits across models.
+
+The project uses sktime to streamline time-series model fitting, cross-validation
+splits, HPO, and evaluation. Each model's runner connects data loading to this
+workflow.
+
+Implemented Models:
+- Ridge Regression
+- ARIMA
+- TCN - A recurrent CNN model
 
 ## Setup
 
@@ -24,135 +33,82 @@ python -m pip install torch==2.14.1+cpu --index-url https://download.pytorch.org
 
 On Linux/macOS, use `python3.11 -m venv .venv` and `source .venv/bin/activate`.
 
-## Run a model
+## Train, evaluate, and tune
 
-Run from the repository root with the environment active. The experiment YAML
-defines data, splits, and forecast settings. A model YAML is optional; model
-defaults live inside the model's runner function.
+Run from the repository root with the environment active. The examples use
+ARIMA. For Ridge, replace the experiment path with
+`configs/experiments/ridge_prototype.yaml` and the model path with
+`configs/models/ridge_regression.yaml`.
 
-Evaluate Ridge defaults without HPO:
-
-```powershell
-python main.py --exp-cfg configs/experiments/ridge_prototype.yaml
-```
-
-Use `--mdl-cfg configs/models/ridge_regression.yaml` for optional model/HPO
-overrides. Evaluation is the default stage.
-
-Run HPO explicitly with a model YAML containing the search space, trial count,
-and seed:
+Fit and evaluate with defaults (no HPO):
 
 ```powershell
-python main.py --stage hpo --exp-cfg configs/experiments/ridge_prototype.yaml --mdl-cfg configs/models/ridge_regression.yaml
+python main.py --stage evaluate --exp-cfg configs/experiments/ARIMA.yaml
 ```
 
-Then evaluate its saved parameters:
+`evaluate` is the default stage: train/fit the model, run development CV, and
+evaluate on the final test set. Add `--mdl-cfg` for optional parameter overrides;
+otherwise defaults come from the model function.
+
+HPO only (development CV; no final-test evaluation):
 
 ```powershell
-python main.py --stage evaluate --exp-cfg configs/experiments/ridge_prototype.yaml --hpo-run outputs/hpo_runs/<hpo-run-id>
+python main.py --stage hpo --exp-cfg configs/experiments/ARIMA.yaml --mdl-cfg configs/models/ARIMA.yaml
 ```
 
-Use `--stage all` for HPO followed by evaluation. HPO saves to
-`outputs/hpo_runs/`; evaluation saves to `outputs/runs/`. Use `--output-root`
-and `--run-name` to override these settings. Saved HPO runs use plain parameter
-names and `hpo_trials.csv`; older Ridge output formats are no longer supported.
-
-## Run ARIMA
-
-Evaluate the function's default order `(1, 1, 1)` without HPO or a model YAML:
-
-```powershell
-python main.py --exp-cfg configs/experiments/ARIMA.yaml
-```
-
-Tune the candidate orders from the model YAML:
+HPO, then fit and evaluate with the selected parameters:
 
 ```powershell
 python main.py --stage all --exp-cfg configs/experiments/ARIMA.yaml --mdl-cfg configs/models/ARIMA.yaml
 ```
 
-The supplied ARIMA experiment reads `Dataset/preprocessed_dataset_1y.csv`:
-35,136 observations at 15-minute intervals, with no duplicate timestamps or
-missing targets. Its horizon and step of 24 both represent six hours. The data
-is not resampled. Use equivalent data periods, frequencies, and evaluation
-settings when comparing models.
-
-ARIMA reads a comma-separated processed CSV with UTC timestamps and a numeric
-target. It uses the full fold training window; Ridge's `lookback` setting does
-not apply. ARIMA's native checkpoint is saved as `checkpoints/model.joblib`,
-and its prediction, metric, and HPO files follow the common result contract.
-
-Run the focused integration tests on a small synthetic series:
+Reuse saved HPO parameters without tuning again (replace `RUN_ID`):
 
 ```powershell
-python -m unittest discover -s tests -v
+python main.py --stage evaluate --exp-cfg configs/experiments/ARIMA.yaml --hpo-run outputs/hpo_runs/RUN_ID
 ```
 
-They include default/override evaluation, a one-trial HPO smoke test, saved-HPO
-reuse, checkpoints, plots, and CLI dispatch for both models.
+HPO requires a model YAML with search settings. `--hpo-run` loads the best
+hyperparameters from a saved HPO run. Use `--run-name` to set the run name.
+
+## Outputs
+
+Each run gets a unique folder under `outputs/hpo_runs/` or `outputs/runs/`.
+The parent folder is set by `output_root` in the experiment YAML.
+
+Saved files:
+
+- `run_manifest.json`: run settings, status, timings, and summary.
+- `artifacts/split_manifest.json`: development/test boundaries and fold details.
+- `artifacts/selected_parameters.json`: model parameters and their source.
+- `artifacts/hpo_trials.csv`: trial parameters and validation scores (with HPO).
+- `predictions/cv_validation.csv`, `final_test.csv`: actuals, forecasts, and residuals.
+- `metrics/cv_validation.json`, `final_test.json`: MAE/RMSE overall and by horizon;
+  CV also includes fold scores and their mean.
+- `metrics/*_evaluation.csv`: per-fold scores and timings.
+- `checkpoints/model.joblib`: fitted development model.
+- `logs/error.log`: details if output saving fails.
+
+Graphs in `plots/`:
+
+- `forecast_example_1.png` to `forecast_example_3.png`: up to three test forecasts
+  against actuals, with recent history and the train/test boundary.
+- `final_test_errors_by_horizon.png`: MAE and RMSE by forecast step.
+- `final_test_residual_distribution.png`: histogram of actual minus prediction.
+- `final_test_residuals_over_time.png`: one-step forecast residuals over time.
+- `optuna_validation_history.png`: trial scores and best score so far (with HPO).
+
+HPO-only runs save the manifest, artifacts, and tuning graph. Evaluation runs
+save predictions, metrics, the checkpoint, and forecast graphs too.
 
 ## Add a model
 
 1. Keep the experiment in `src/models/<model_name>/run.py`. Expose
-   `run_experiment(exp_cfg, mdl_cfg=None, output_root=None, run_name=None, stage="evaluate", hpo_run=None)`.
+   `run_experiment(exp_cfg, mdl_cfg=None, run_name=None, stage="evaluate", hpo_run=None)`.
 2. Define model defaults inside the runner function. A model YAML supplies
    optional evaluation overrides and is required when starting HPO.
 3. Add a dispatch branch in `main.py` and any required dependencies.
-4. Build the result dict below and call `save_run_outputs()`.
+4. Use the existing runners as examples for standardized results and call
+   `save_run_outputs()`.
 5. Save any native checkpoint directly under the returned run's `checkpoints/`
    folder, then call functions from `src/outputs/plot.py` separately.
-
-A pretrained foundation-model runner can load its chosen model and predict
-without model YAML, HPO, or exporting another copy of its weights. It still
-uses experiment data/split/horizon settings. Record the pretrained model ID,
-revision, and inference settings in run metadata. A Chronos runner is not
-implemented here.
-
-## Result dict
-
-Use plain dictionaries and DataFrames; no result class is required:
-
-```python
-results = {
-    "predictions": predictions,
-    "split_manifest": split_manifest,
-    "selected_parameters": {
-        "parameters": parameters,
-        "source": "defaults",
-    },
-}
-run_path = save_run_outputs(results, metadata={"model": model_name})
-```
-
-`predictions` is a nonempty DataFrame with `split`, `forecast_origin`,
-`target_timestamp`, `horizon_step`, `actual`, and `prediction` columns.
-Supported splits are `cv_validation` and `final_test`; CV rows also require
-`fold`. A final-test-only result is valid. The writer calculates residuals
-and shared MAE/RMSE metrics. Future multi-series runs should include `series_id`.
-
-`split_manifest` records the model runner's actual split boundaries. Forecast
-plotting expects `final_test.evaluation_range.start` and a separate timestamped
-target series.
-
-Optional result fields:
-
-- `selected_parameters`: a dict with `parameters` and `source`
-  (`defaults`, `model_config`, or `hpo`).
-- `trials`: a DataFrame with `trial`, `score`, and optional `state`;
-  saved as `artifacts/hpo_trials.csv`.
-- `tables`: named DataFrames saved under `metrics/`.
-- `checkpoint_path`: an exported file or folder, copied into `checkpoints/`.
-  Use this only for an existing export. Otherwise the model runner can save
-  directly into the returned run folder, using joblib, PyTorch, or its own API.
-  Omit this field when no checkpoint is needed.
-
-The manifest's `completed` status covers shared result saving. Native
-checkpoints and plots are separate runner steps and propagate their own errors.
-
-HPO results contain `trials`, `split_manifest`, and `selected_parameters`.
-The selection records `parameters`, `validation_score`, `metric`, and
-`direction` (`minimize` or `maximize`). Tuning plots use these standard fields.
-
-Fit preprocessing on training data only, tune on development data, and keep
-final-test scores out of hyperparameter selection. Without HPO, CV reports
-the fixed model's performance and does not select parameters.
