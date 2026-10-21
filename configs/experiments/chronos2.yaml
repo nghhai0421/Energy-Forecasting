@@ -1,0 +1,26 @@
+run_name: chronos2_hourly
+
+model: chronos2
+
+data:
+  path: Dataset/energy_hourly.csv
+  timestamp_column: Date from
+  target_column: Grid load [MWh] calculated resolutions
+  frequency: h
+  covariates:
+    historical:
+      - Grid load incl. pumped storage [MWh] calculated resolutions
+      - Pumped storage [MWh] calculated resolutions
+      - Residual load [MWh] calculated resolutions
+    future: [] # Only features known at the forecast origin.
+
+forecast:
+  lookback: 168
+  horizon: 24
+  step_length: 24
+
+split:
+  test_fraction: 0.2
+  train_window_fraction: 0.8
+
+output_root: outputs

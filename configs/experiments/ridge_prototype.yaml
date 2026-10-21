@@ -15,6 +15,6 @@ forecast:
 
 split:
   test_fraction: 0.2       # Hold out 20% for testing.
-  train_window_fraction: 0.7 # Train on 70% of development per window.
+  train_window_fraction: 0.8 # Train on 70% of development per window.
 
 output_root: outputs

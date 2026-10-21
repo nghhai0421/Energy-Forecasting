@@ -16,4 +16,5 @@ dependencies:
       - --extra-index-url=https://download.pytorch.org/whl/cpu
       - sktime==1.2.0
       - pmdarima
+      - chronos-forecasting>=2.0.0
       - torch==2.14.1+cpu

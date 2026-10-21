@@ -9,9 +9,10 @@ splits, HPO, and evaluation. Each model's runner connects data loading to this
 workflow.
 
 Implemented Models:
+
 - Ridge Regression
 - ARIMA
-- TCN - A recurrent CNN model
+- Chronos-2 (pretrained, zero-shot)
 
 ## Setup
 
@@ -71,6 +72,7 @@ python main.py --stage evaluate --exp-cfg configs/experiments/ARIMA.yaml --hpo-r
 HPO requires a model YAML with search settings. `--hpo-run` loads the best
 hyperparameters from a saved HPO run. Use `--run-name` to set the run name.
 
+
 ## Outputs
 
 Each run gets a unique folder under `outputs/hpo_runs/` or `outputs/runs/`.
@@ -86,7 +88,7 @@ Saved files:
 - `metrics/cv_validation.json`, `final_test.json`: MAE/RMSE overall and by horizon;
   CV also includes fold scores and their mean.
 - `metrics/*_evaluation.csv`: per-fold scores and timings.
-- `checkpoints/model.joblib`: fitted development model.
+- `checkpoints/model.joblib`: fitted development model (Ridge/ARIMA).
 - `logs/error.log`: details if output saving fails.
 
 Graphs in `plots/`:
@@ -99,7 +101,9 @@ Graphs in `plots/`:
 - `optuna_validation_history.png`: trial scores and best score so far (with HPO).
 
 HPO-only runs save the manifest, artifacts, and tuning graph. Evaluation runs
-save predictions, metrics, the checkpoint, and forecast graphs too.
+save predictions, metrics, and forecast graphs too. Chronos-2 records the
+pretrained model ID, resolved revision when available, and inference settings
+instead of saving another weights checkpoint.
 
 ## Add a model
 
