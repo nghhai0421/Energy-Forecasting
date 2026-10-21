@@ -1,0 +1,20 @@
+run_name: ARIMA_run
+
+model: ARIMA
+
+data:
+  path: Dataset/preprocessed_dataset_1y.csv
+  timestamp_column: timestamp_utc
+  target_column: grid load [MWh]
+  covariates: []
+
+forecast:
+  lookback: 24
+  horizon: 24
+  step_length: 24          # Refit and evaluate a new forecast every 24 observations.
+
+split:
+  test_fraction: 0.2       # 20% of the full series.
+  train_window_fraction: 0.7 # Use 70% of development as each fixed CV/test training window.
+
+output_root: outputs
