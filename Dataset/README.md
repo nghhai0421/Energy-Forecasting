@@ -29,7 +29,7 @@ File: open-meteo-48.83N9.15E293m.xlsx
 
 Source (with description of variables): https://open-meteo.com/en/docs/historical-weather-api
 
-Timeframe: 01.01.2017, 02:00 -01.01.2026, Resolution = 15min
+Timeframe: 01.01.2017, 02:00-13.12.2026, Resolution = 15min
 
 Region: Stuttgart
 
