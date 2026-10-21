@@ -11,10 +11,10 @@ data:
 forecast:
   lookback: 24
   horizon: 24
-  step_length: 24          # Refit and evaluate a new forecast every 48 observations.
+  step_length: 24          # Refit every 24 observations.
 
 split:
-  test_fraction: 0.2       # 20% of the full series.
-  train_window_fraction: 0.7 # Use 70% of development as each fixed CV/test training window.
+  test_fraction: 0.2       # Hold out 20% for testing.
+  train_window_fraction: 0.7 # Train on 70% of development per window.
 
 output_root: outputs

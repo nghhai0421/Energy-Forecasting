@@ -3,7 +3,7 @@ solver: cholesky
 hpo:
   n_trials: 10
   seed: 42
-  alpha:                  # Optuna FloatDistribution settings for Ridge alpha.
+  alpha:                  # Ridge alpha search range.
     low: 0.0001
     high: 10000
     log: true

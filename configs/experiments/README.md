@@ -20,15 +20,19 @@ moves forward once per day. There is no separate cv_folds setting. Both CV
 and test refit at each origin. Test evaluation receives the latest development
 window plus test data, so its first fit uses development only and its first
 forecast begins at the test boundary. Later windows include newly observed
-test actuals. The selected alpha stays fixed. The checkpoint is a separate
+test actuals. The chosen parameters stay fixed, whether they came from function defaults,
+optional model YAML, or HPO. The checkpoint is a separate
 model fitted on all development data before test evaluation.
 
 output_root is the parent folder for stage-specific outputs: HPO runs go in
 hpo_runs/ and normal evaluation runs go in runs/. run_name controls the run
 folder name. Paths in YAML resolve from the repository root. Configs are
 recorded by path in the run manifest.
-Model and plot saving is always on; configs and full datasets are not copied.
+Checkpoint export is optional and model-specific; pretrained inference can
+omit it. The runner calls plotting separately. Configs and full datasets are
+not copied.
 
-The reader handles the supplied SMARD CSV and daylight-saving timestamps.
+The experiment YAML remains necessary when no model YAML or HPO is used.
+The Ridge reader handles the supplied SMARD CSV and daylight-saving timestamps.
 sktime uses observation positions internally; outputs restore the timestamps.
 Nonempty covariates currently raise an error.

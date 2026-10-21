@@ -1,44 +1,28 @@
-"""Explore raw datasets, create BW holiday dataset, align timestamps, merge, and analyze correlations.
-
-Steps performed:
-1. Explore raw datasets (Actual Consumption, Day-Ahead Prices, Open-Meteo Weather) for:
-   - Incorrect data types and non-numeric placeholder tokens ('-', '#NUM!')
-   - Duplicates and timestamp integrity (DST summertime/wintertime transitions)
-   - Missing values
-   - Outliers and domain-specific impossible values
-2. Generate Baden-Württemberg (BW) holiday dataset and save to Dataset/df_holiday.xlsx
-3. Align timestamps across all datasets (handling Europe/Berlin DST vs. fixed UTC+2 in Open-Meteo)
-4. Merge the key variables defined in Dataset/README.md at 15-minute resolution
-5. Summarize the target variable ('grid load [MWh]')
-6. Compute and display the correlation matrix across all merged variables
-"""
+"""Inspect raw data, align timestamps, merge features, and report correlations."""
 
 from datetime import timedelta, timezone
 from pathlib import Path
 
 import holidays
-import numpy as np
 import pandas as pd
 
 
-def get_project_root() -> Path:
-    """Find the repository root whether run as a script or in an interactive cell."""
-    start = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd().resolve()
-    for candidate in (start, *start.parents):
-        if (candidate / "Dataset").is_dir():
-            return candidate
-    return start
-
-
-PROJECT_ROOT = get_project_root()
+# Set Paths
+project_start = Path(__file__).resolve().parent if "__file__" in globals() else Path.cwd().resolve()
+PROJECT_ROOT = project_start
+for candidate in (project_start, *project_start.parents):
+    if (candidate / "Dataset").is_dir():
+        PROJECT_ROOT = candidate
+        break
 DATASET_DIR = PROJECT_ROOT / "Dataset"
 
 CONSUMPTION_FILE = DATASET_DIR / "Actual_consumption_201701010000_202601010000_Quarterhour.xlsx"
 PRICES_FILE = DATASET_DIR / "Day-ahead_prices_201701010000_202601010000_Quarterhour.xlsx"
 WEATHER_FILE = DATASET_DIR / "open-meteo-48.83N9.15E293m.xlsx"
 HOLIDAY_FILE = DATASET_DIR / "df_holiday.xlsx"
+MERGED_FILE = DATASET_DIR / "merged_dataset.csv"
 
-# Key variables specified in Dataset/README.md
+# Set Columns
 TARGET_COL = "grid load [MWh]"
 PRICE_COL = "Germany/Luxembourg [€/MWh]"
 WEATHER_COLS = [
@@ -53,7 +37,7 @@ WEATHER_COLS = [
 
 
 def load_raw_datasets() -> dict[str, pd.DataFrame]:
-    """Load the three raw Excel datasets without altering their values."""
+    """Read the configured Excel paths; return raw consumption, price, and weather tables."""
     print("Loading raw Excel files from:", DATASET_DIR)
     consumption = pd.read_excel(CONSUMPTION_FILE, skiprows=9)
     prices = pd.read_excel(PRICES_FILE, skiprows=9)
@@ -66,7 +50,7 @@ def load_raw_datasets() -> dict[str, pd.DataFrame]:
 
 
 def parse_timestamp_series(series: pd.Series) -> pd.Series:
-    """Parse timestamps from either string dates or Excel serial day numbers."""
+    """Convert a timestamp Series to datetimes; invalid strings become NaT."""
     if pd.api.types.is_datetime64_any_dtype(series):
         return series
     if pd.api.types.is_numeric_dtype(series):
@@ -76,8 +60,10 @@ def parse_timestamp_series(series: pd.Series) -> pd.Series:
 
 
 def check_data_types(df: pd.DataFrame, timestamp_cols: list[str]) -> pd.DataFrame:
-    """Inspect column dtypes, identify non-numeric tokens, and coerce value columns."""
-    print("\n--- 1. Data Types & Non-Numeric Tokens ---")
+    """Inspect a DataFrame and timestamp column names; return coerced rows and print types."""
+    print("\nData types and non-numeric tokens")
+
+    # Check Columns
     print(f"Shape: {df.shape[0]:,} rows x {df.shape[1]} columns")
 
     coerced_df = df.copy()
@@ -120,8 +106,10 @@ def check_data_types(df: pd.DataFrame, timestamp_cols: list[str]) -> pd.DataFram
 
 
 def check_duplicates_and_timestamps(df: pd.DataFrame, primary_ts_col: str) -> None:
-    """Check for full-row duplicates, duplicate timestamps, DST transitions, and gaps."""
-    print("\n--- 2. Duplicates & Timestamp Integrity ---")
+    """Print duplicates, DST candidates, and 15-minute gaps for a timestamped DataFrame."""
+    print("\nDuplicates and timestamps")
+
+    # Count Duplicates
     full_dups = int(df.duplicated().sum())
     ts = df[primary_ts_col]
     ts_dups = int(ts.duplicated().sum())
@@ -151,6 +139,7 @@ def check_duplicates_and_timestamps(df: pd.DataFrame, primary_ts_col: str) -> No
         )
         print(f"  -> Unexpected duplicate timestamp rows outside Oct DST: {non_dst_dup_rows:,}")
 
+    # Check Gaps
     expected_grid = pd.date_range(start=start_ts, end=end_ts, freq="15min")
     missing_wall_clock = expected_grid.difference(valid_ts.unique())
     march_dst_mask = (
@@ -167,8 +156,10 @@ def check_duplicates_and_timestamps(df: pd.DataFrame, primary_ts_col: str) -> No
 
 
 def check_missing_data(raw_df: pd.DataFrame, coerced_df: pd.DataFrame, primary_ts_col: str) -> None:
-    """Report missing data before and after coercing non-numeric tokens."""
-    print("\n--- 3. Missing Data ---")
+    """Print missingness from raw/coerced DataFrames and a timestamp column name."""
+    print("\nMissing data")
+
+    # Count Missing Values
     total_rows = len(coerced_df)
     ts = coerced_df[primary_ts_col]
 
@@ -202,8 +193,10 @@ def check_outliers_and_impossible_values(
     timestamp_cols: list[str],
     dataset_name: str,
 ) -> None:
-    """Compute distribution stats, IQR/Z-score outliers, and domain-specific impossible values."""
-    print("\n--- 4. Outliers & Impossible / Implausible Values ---")
+    """Print outlier and domain checks for numeric rows, timestamp columns, and dataset name."""
+    print("\nOutliers and implausible values")
+
+    # Calc Outlier Counts
     value_cols = [c for c in coerced_df.columns if c not in timestamp_cols]
 
     stats_rows = []
@@ -213,8 +206,10 @@ def check_outliers_and_impossible_values(
             continue
         q01, q25, q50, q75, q99 = s.quantile([0.01, 0.25, 0.50, 0.75, 0.99])
         iqr = q75 - q25
-        iqr_outliers = int(((s < (q25 - 1.5 * iqr)) | (s > (q75 + 1.5 * iqr))).sum())
-        extreme_iqr = int(((s < (q25 - 3.0 * iqr)) | (s > (q75 + 3.0 * iqr))).sum())
+        iqr_mask = (s < q25 - 1.5 * iqr) | (s > q75 + 1.5 * iqr)
+        extreme_mask = (s < q25 - 3.0 * iqr) | (s > q75 + 3.0 * iqr)
+        iqr_outliers = int(iqr_mask.sum())
+        extreme_iqr = int(extreme_mask.sum())
         std = s.std()
         z_outliers = int((((s - s.mean()).abs() / std) > 3.0).sum()) if std > 0 else 0
 
@@ -234,6 +229,7 @@ def check_outliers_and_impossible_values(
     stats_report = pd.DataFrame(stats_rows)
     print(stats_report.to_string(index=False))
 
+    # Check Domain Limits
     print("\nDomain-specific sanity checks:")
     if dataset_name == "Actual Consumption":
         for col in ["grid load [MWh]", "Grid load incl. hydro pumped storage [MWh]"]:
@@ -287,10 +283,9 @@ def create_bw_holiday_dataset(
     years: range = range(2017, 2027),
     save_path: Path = HOLIDAY_FILE,
 ) -> pd.DataFrame:
-    """Create a Baden-Württemberg (BW) holiday dataset and save it in Dataset/."""
-    print("\n" + "=" * 80)
+    """Create holidays for years; save to save_path and return the date/name DataFrame."""
     print("HOLIDAY DATASET: Baden-Württemberg (BW)")
-    print("=" * 80)
+    # Create Holidays
     bw_holidays = holidays.Germany(years=years, subdiv="BW")
     df_holidays = (
         pd.DataFrame(list(bw_holidays.items()), columns=["Datum", "Feiertag"])
@@ -298,6 +293,7 @@ def create_bw_holiday_dataset(
         .reset_index(drop=True)
     )
     df_holidays["Datum"] = pd.to_datetime(df_holidays["Datum"])
+    # Save Holidays
     df_holidays.to_excel(save_path, index=False)
     print(f"Saved BW holiday dataset ({len(df_holidays)} holidays) to: {save_path}")
     print(df_holidays.head(10).to_string(index=False))
@@ -308,23 +304,14 @@ def align_and_merge_datasets(
     datasets: dict[str, pd.DataFrame],
     df_holidays: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Match timestamps (addressing DST summertime vs. wintertime) and merge key variables.
+    """Align raw dataset tables and holiday dates; save and return merged rows.
 
-    Timezone / DST alignment details:
-    - SMARD (Actual Consumption & Day-Ahead Prices): recorded in local 'Europe/Berlin' wall-clock
-      time (CET UTC+1 in winter, CEST UTC+2 in summer). Localizing with ambiguous='infer' resolves
-      the 36 repeated October fall-back timestamps, and converting to UTC yields a strictly unique,
-      continuous 15-minute UTC index.
-    - Open-Meteo Weather: exported with a fixed UTC+2 offset year-round (utc_offset_seconds = 7200).
-      We localize to fixed UTC+2 and convert to UTC so winter and summer observations match the
-      exact physical point in time.
-    - Holidays: matched against the local 'Europe/Berlin' calendar date.
+    SMARD uses Berlin local time; weather uses fixed UTC+2. Join in UTC and
+    match holidays by Berlin date. DST ambiguity is inferred from row order.
     """
-    print("\n" + "=" * 80)
     print("TIMESTAMP ALIGNMENT & MERGING (15-min Resolution)")
-    print("=" * 80)
 
-    # 1. Consumption: keep 'grid load [MWh]'
+    # Load Consumption
     cons_raw = datasets["Actual Consumption"]
     cons_berlin = parse_timestamp_series(cons_raw["Start date"]).dt.tz_localize(
         "Europe/Berlin", ambiguous="infer"
@@ -335,25 +322,24 @@ def align_and_merge_datasets(
         TARGET_COL: pd.to_numeric(cons_raw[TARGET_COL], errors="coerce"),
     })
 
-    # 2. Day-Ahead Prices: keep 'Germany/Luxembourg [€/MWh]' and repeat hourly value 4x if needed
+    # Load Prices
     prices_raw = datasets["Day-Ahead Prices"]
     prices_berlin = parse_timestamp_series(prices_raw["Start date"]).dt.tz_localize(
         "Europe/Berlin", ambiguous="infer"
     )
     price_series = pd.to_numeric(prices_raw[PRICE_COL], errors="coerce")
-    # Ensure hourly values fill all four 15-minute intervals within the same hour
+    # Repeat hourly prices for up to four quarter-hour rows.
     price_series = price_series.ffill(limit=3)
     prices_df = pd.DataFrame({
         "timestamp_utc": prices_berlin.dt.tz_convert("UTC"),
         PRICE_COL: price_series,
     })
 
-    # 3. Open-Meteo Weather: keep key variables from Dataset/README.md
+    # Load Weather
     weather_raw = datasets["Open-Meteo Weather"]
     fixed_utc_plus_2 = timezone(timedelta(hours=2))
     weather_ts_utc = (
         parse_timestamp_series(weather_raw["time"])
-
         .dt.tz_localize(fixed_utc_plus_2)
         .dt.tz_convert("UTC")
     )
@@ -361,7 +347,7 @@ def align_and_merge_datasets(
     for col in WEATHER_COLS:
         weather_df[col] = pd.to_numeric(weather_raw[col], errors="coerce")
 
-    # 4. Merge on unique 15-minute UTC timestamps
+    # Merge Data
     merged = (
         cons_df.merge(prices_df, on="timestamp_utc", how="inner")
         .merge(weather_df, on="timestamp_utc", how="inner")
@@ -369,7 +355,7 @@ def align_and_merge_datasets(
         .reset_index(drop=True)
     )
 
-    # 5. Add BW holiday indicator based on local Europe/Berlin date
+    # Add Holidays
     holiday_dates = set(pd.to_datetime(df_holidays["Datum"]).dt.date)
     berlin_dates = merged["timestamp_berlin"].dt.date
     merged["is_holiday"] = berlin_dates.isin(holiday_dates).astype(int)
@@ -391,17 +377,17 @@ def align_and_merge_datasets(
         f"\nComplete rows with all variables present (from {complete_cases['timestamp_berlin'].min()} "
         f"to {complete_cases['timestamp_berlin'].max()}): {len(complete_cases):,}"
     )
+    # Save Data
     merged.to_csv(MERGED_FILE, index=False)
     print(f"Saved merged dataset to: {MERGED_FILE}")
     return merged
 
 
 def summarize_target_variable(merged: pd.DataFrame) -> None:
-    """Provide a detailed statistical and temporal summary of 'grid load [MWh]'."""
-    print("\n" + "=" * 80)
+    """Print target statistics from merged rows with timestamp_berlin and is_holiday."""
     print(f"TARGET VARIABLE SUMMARY: {TARGET_COL}")
-    print("=" * 80)
 
+    # Calc Target Stats
     target = merged[TARGET_COL].dropna()
     q01, q05, q25, q50, q75, q95, q99 = target.quantile([0.01, 0.05, 0.25, 0.50, 0.75, 0.95, 0.99])
 
@@ -426,17 +412,16 @@ def summarize_target_variable(merged: pd.DataFrame) -> None:
     print("\n--- Overall Distribution Statistics ---")
     print(overall_stats.to_string())
 
-    # Breakdown by Year (local Berlin time)
+    # Set Day Types
     df_temp = merged[["timestamp_berlin", TARGET_COL, "is_holiday"]].dropna(subset=[TARGET_COL]).copy()
     df_temp["year"] = df_temp["timestamp_berlin"].dt.year
     df_temp["weekday"] = df_temp["timestamp_berlin"].dt.weekday
-    df_temp["day_type"] = np.where(
-        df_temp["is_holiday"] == 1,
-        "Holiday (BW)",
-        np.where(df_temp["weekday"] >= 5, "Weekend", "Workday"),
-    )
+    df_temp["day_type"] = "Workday"
+    df_temp.loc[df_temp["weekday"] >= 5, "day_type"] = "Weekend"
+    df_temp.loc[df_temp["is_holiday"] == 1, "day_type"] = "Holiday (BW)"
 
-    print("\n--- Target Summary by Year ---")
+    # Group by Year
+    print("\nTarget summary by year")
     yearly = (
         df_temp.groupby("year")[TARGET_COL]
         .agg(count="count", mean="mean", std="std", min="min", median="median", max="max")
@@ -444,7 +429,8 @@ def summarize_target_variable(merged: pd.DataFrame) -> None:
     )
     print(yearly.to_string())
 
-    print("\n--- Target Summary by Day Type (Workday vs. Weekend vs. BW Holiday) ---")
+    # Group by Day Type
+    print("\nTarget summary by day type")
     by_day_type = (
         df_temp.groupby("day_type")[TARGET_COL]
         .agg(count="count", mean="mean", std="std", min="min", median="median", max="max")
@@ -454,15 +440,15 @@ def summarize_target_variable(merged: pd.DataFrame) -> None:
 
 
 def analyze_correlations(merged: pd.DataFrame) -> pd.DataFrame:
-    """Compute and display Pearson and Spearman correlations across all merged variables."""
-    print("\n" + "=" * 80)
+    """Print correlations from complete merged rows; return the Pearson matrix."""
     print("CORRELATION OVERVIEW BETWEEN VARIABLES")
-    print("=" * 80)
 
+    # Select Complete Rows
     feature_cols = [TARGET_COL, PRICE_COL, *WEATHER_COLS, "is_holiday"]
     corr_df = merged[feature_cols].dropna()
     print(f"Correlation computed on {len(corr_df):,} complete 15-minute observations.")
 
+    # Calc Correlations
     pearson_corr = corr_df.corr(method="pearson")
     spearman_corr = corr_df.corr(method="spearman")
 
@@ -482,7 +468,8 @@ def analyze_correlations(merged: pd.DataFrame) -> pd.DataFrame:
 
 
 def run_exploration() -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Run dataset exploration, BW holiday creation, timestamp alignment, merging, and correlation analysis."""
+    """Read configured raw files; save datasets and return merged rows and Pearson matrix."""
+    # Load Data
     datasets = load_raw_datasets()
 
     timestamp_config = {
@@ -491,18 +478,19 @@ def run_exploration() -> tuple[pd.DataFrame, pd.DataFrame]:
         "Open-Meteo Weather": (["time"], "time"),
     }
 
+    # Check Datasets
     for name, raw_df in datasets.items():
-        print("\n" + "=" * 80)
         print(f"DATASET: {name}")
-        print("=" * 80)
         ts_cols, primary_ts = timestamp_config[name]
         coerced_df = check_data_types(raw_df, ts_cols)
         check_duplicates_and_timestamps(coerced_df, primary_ts)
         check_missing_data(raw_df, coerced_df, primary_ts)
         check_outliers_and_impossible_values(coerced_df, ts_cols, name)
 
+    # Merge Data
     df_holidays = create_bw_holiday_dataset()
     merged_df = align_and_merge_datasets(datasets, df_holidays)
+    # Summarize Data
     summarize_target_variable(merged_df)
     corr_matrix = analyze_correlations(merged_df)
     return merged_df, corr_matrix

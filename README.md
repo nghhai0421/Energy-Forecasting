@@ -1,7 +1,7 @@
 # Energy Forecasting
 
 Compare models for hourly energy forecasting. Ridge regression is the current
-working example; iTransformer and TabPFN-TS are placeholders.
+working example. Further models can be added as single-file runners.
 
 ## Setup
 
@@ -25,36 +25,99 @@ On Linux/macOS, use `python3.11 -m venv .venv` and `source .venv/bin/activate`.
 
 ## Run a model
 
-Run commands from the repository root with the environment active.
-Set the data, target, forecast and split settings in an experiment YAML under
-`configs/experiments/`. Set model parameters and HPO settings in a model YAML
-under `configs/models/`.
+Run from the repository root with the environment active. The experiment YAML
+defines data, splits, and forecast settings. A model YAML is optional; model
+defaults live inside the model's runner function.
 
-Run Ridge HPO:
+Evaluate Ridge defaults without HPO:
+
+```powershell
+python main.py --exp-cfg configs/experiments/ridge_prototype.yaml
+```
+
+Use `--mdl-cfg configs/models/ridge_regression.yaml` for optional model/HPO
+overrides. Evaluation is the default stage.
+
+Run HPO explicitly with a model YAML containing the search space, trial count,
+and seed:
 
 ```powershell
 python main.py --stage hpo --exp-cfg configs/experiments/ridge_prototype.yaml --mdl-cfg configs/models/ridge_regression.yaml
 ```
 
-Then evaluate using the full HPO run folder printed by that command:
+Then evaluate its saved parameters:
 
 ```powershell
-python main.py --stage evaluate --exp-cfg configs/experiments/ridge_prototype.yaml --mdl-cfg configs/models/ridge_regression.yaml --hpo-run outputs/hpo_runs/<hpo-run-id>
+python main.py --stage evaluate --exp-cfg configs/experiments/ridge_prototype.yaml --hpo-run outputs/hpo_runs/<hpo-run-id>
 ```
 
-Use `--stage all` to run both stages together. HPO outputs go to
-`outputs/hpo_runs/`; model evaluation outputs go to `outputs/runs/`.
-Use `--output-root` and `--run-name` to override the output parent and run name.
+Use `--stage all` for HPO followed by evaluation. HPO saves to
+`outputs/hpo_runs/`; evaluation saves to `outputs/runs/`. Use `--output-root`
+and `--run-name` to override these settings. Saved HPO runs use plain parameter
+names and `hpo_trials.csv`; older Ridge output formats are no longer supported.
 
 ## Add a model
 
-1. Create `src/models/<model_name>/run.py`, following the Ridge example.
-   Expose `run_experiment(exp_cfg, mdl_cfg, output_root=None, run_name=None, stage="all", hpo_run=None)`.
-2. Add experiment and model YAML files directly in their config folders.
-   Set the experiment's `model` field to your model name.
-3. Add the model's dispatch entry in `main.py` and its dependencies to
-   `environment.yml`.
-4. Use `save_run_outputs()` from `src/outputs/output.py` to save results.
+1. Keep the experiment in `src/models/<model_name>/run.py`. Expose
+   `run_experiment(exp_cfg, mdl_cfg=None, output_root=None, run_name=None, stage="evaluate", hpo_run=None)`.
+2. Define model defaults inside the runner function. A model YAML supplies
+   optional evaluation overrides and is required when starting HPO.
+3. Add a dispatch branch in `main.py` and any required dependencies.
+4. Build the result dict below and call `save_run_outputs()`.
+5. Save any native checkpoint directly under the returned run's `checkpoints/`
+   folder, then call functions from `src/outputs/plot.py` separately.
+
+A pretrained foundation-model runner can load its chosen model and predict
+without model YAML, HPO, or exporting another copy of its weights. It still
+uses experiment data/split/horizon settings. Record the pretrained model ID,
+revision, and inference settings in run metadata. A Chronos runner is not
+implemented here.
+
+## Result dict
+
+Use plain dictionaries and DataFrames; no result class is required:
+
+```python
+results = {
+    "predictions": predictions,
+    "split_manifest": split_manifest,
+    "selected_parameters": {
+        "parameters": parameters,
+        "source": "defaults",
+    },
+}
+run_path = save_run_outputs(results, metadata={"model": model_name})
+```
+
+`predictions` is a nonempty DataFrame with `split`, `forecast_origin`,
+`target_timestamp`, `horizon_step`, `actual`, and `prediction` columns.
+Supported splits are `cv_validation` and `final_test`; CV rows also require
+`fold`. A final-test-only result is valid. The writer calculates residuals
+and shared MAE/RMSE metrics. Future multi-series runs should include `series_id`.
+
+`split_manifest` records the model runner's actual split boundaries. Forecast
+plotting expects `final_test.evaluation_range.start` and a separate timestamped
+target series.
+
+Optional result fields:
+
+- `selected_parameters`: a dict with `parameters` and `source`
+  (`defaults`, `model_config`, or `hpo`).
+- `trials`: a DataFrame with `trial`, `score`, and optional `state`;
+  saved as `artifacts/hpo_trials.csv`.
+- `tables`: named DataFrames saved under `metrics/`.
+- `checkpoint_path`: an exported file or folder, copied into `checkpoints/`.
+  Use this only for an existing export. Otherwise the model runner can save
+  directly into the returned run folder, using joblib, PyTorch, or its own API.
+  Omit this field when no checkpoint is needed.
+
+The manifest's `completed` status covers shared result saving. Native
+checkpoints and plots are separate runner steps and propagate their own errors.
+
+HPO results contain `trials`, `split_manifest`, and `selected_parameters`.
+The selection records `parameters`, `validation_score`, `metric`, and
+`direction` (`minimize` or `maximize`). Tuning plots use these standard fields.
 
 Fit preprocessing on training data only, tune on development data, and keep
-final-test scores out of hyperparameter selection.
+final-test scores out of hyperparameter selection. Without HPO, CV reports
+the fixed model's performance and does not select parameters.
