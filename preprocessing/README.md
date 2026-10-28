@@ -1,43 +1,34 @@
-# Dataset preparation (planned)
-
-Prepare reproducible variants here: univariate, target-derived features, and
-exogenous features. Record raw input, transformations, feature availability and
-variant version; do not transform the supplied raw files in place.
-
-Processed rows will expose timestamp, target, and optional feature columns.
-Start with one target series; choose the source target explicitly after reviewing
-its meaning. Add series_id if multiple series are supported later. See
-../docs/data_inspection.md for verified raw columns and timestamp caveats.
-
-Every input feature must be available at its forecast origin. Lags and rolling
-statistics must not use future target observations; realized future exogenous
-values are not automatically available inputs. Frequency regularization, timezone
-and daylight-saving ambiguity, missing values/hours and duplicates require an
-explicit policy before folds are built. Do not silently discard repeated wall
-clock hours or interpolate without documenting the decision.
-
-Model-specific scaling, encoding and window construction belong in each model's
-process.py. Fit preprocessing on that fold's training data only and reuse it for
-validation/prediction. Future shared folds use the same processed row indices
-across models and candidates.
-
-# Exploration
-1. Changed Excel serial date to pd.to_datetime for all raw dataframe
-2. Explore datasets (Actual Consumption, Day-Ahead Prices, Open-Meteo Weather) for:
-   - Incorrect data types and non-numeric placeholder tokens ('-', '#NUM!')
+# Exploration steps (`preprocessing/exploration.ipynb`)
+1. Loading raw datasets from `Dataset/raw/`
+2. Explore raw datasets (`Actual Consumption`, `Day-Ahead Prices`, `Open-Meteo Weather`) for:
+   - Incorrect data types and non-numeric placeholder tokens (`'-'`, `'#NUM!'`)
    - Duplicates and timestamp integrity (DST summertime/wintertime transitions)
    - Missing values
    - Outliers and domain-specific impossible values
-3. Generate Baden-Württemberg (BW) holiday dataset and save to Dataset/df_holiday.xlsx
-4. Align timestamps across all datasets (handling Europe/Berlin DST vs. fixed UTC+2)
-5. Merge the key variables defined in Dataset/README.md at 15-minute resolution
-    - Hourly price = 4 times
-6. Explore the target variable ('grid load [MWh]')
-7. Compute and display the correlation matrix across all merged variables
-    - Only high correlation is temperature and dew_point_2m (makes sense, I guess we just drop dew_point_2m)
+      - Notice, negative energy prices are possible (https://www.eurelectric.org/wp-content/uploads/2024/11/Eurelectric-explainer-on-negative-prices.pdf)
+3. Generate Baden-Württemberg (BW) holiday dataset and save to `Dataset/raw/df_holiday.xlsx`
+   - Add `is_holiday` indicator matched against `Europe/Berlin` calendar date
+4. Align timestamps across all datasets (handling `Europe/Berlin` DST vs. fixed `UTC+2` in Open-Meteo)
+   - timestap for us should be "timestamp_utc", "timestamp_berlin" still included to understand holiday variable
+5. Merge the key variables (defined in `Dataset/README.md`) at 15-minute resolution 
+   - saved to `Dataset/preprocessed/merged_dataset.csv`
+   - Hourly price repeated 4 times per hour
+6. Explore the target variable (`grid load [MWh]` from `Actual Consumption`) across overall quantiles and years
+7. Compute and display the Pearson and Spearman correlation matrices across all variables
+   - Only high correlation is `temperature_2m (°C)` and `dew_point_2m (°C)` ($r = 0.853$)
 
-# Preprocessing
-1. Chop the merged dataframe to the timeframe where day-ahead price data ('Germany/Luxembourg [€/MWh]') is available
-2. Convert 'weather_code (wmo code)' to categorical dtype
-3. Inspect how NAs are distributed across columns and timestamps
-    - No NAs from 2018.10.01 - 2025.12.13
+# General preprocessing steps (`preprocessing/preprocessing.py`)
+1. Load `Dataset/preprocessed/merged_dataset.csv`
+2. Check how NAs are distributed and slice the merged dataframe to the timeframe where day-ahead price data (`Germany/Luxembourg [€/MWh]`) is available (`2018-10-01` to `2025-12-13`)
+3. Convert `weather_code (wmo code)` to `category` dtype
+4. Inspect how NAs are distributed across columns and timestamps after chopping and impute numeric NAs using the causal prior mean 
+   - No NAs remain from `2018-10-01` to `2025-12-13`
+5. Aggregate the 15-minute preprocessed data to hourly (`1h`) resolution:
+   - `sum` for `grid load [MWh]` and `precipitation (mm)`
+   - `mean` for `Germany/Luxembourg [€/MWh]` and continuous weather variables
+   - Hourly mode for `weather_code (wmo code)` and `max` for `is_holiday`
+6. Slice and save the **1-year (`2023`)** and **5-year (`2019–2023`)** datasets for both **15-minute** and **hourly** resolutions in `Dataset/preprocessed/`:
+   - `Dataset/preprocessed/preprocessed_dataset_5y_15min.csv` (`175,296` rows, `2019–2023`)
+   - `Dataset/preprocessed/preprocessed_dataset_5y_hourly.csv` (`43,824` rows, `2019–2023`)
+   - `Dataset/preprocessed/preprocessed_dataset_1y_15min.csv` (`35,040` rows, `2023`)
+   - `Dataset/preprocessed/preprocessed_dataset_1y_hourly.csv` (`8,760` rows, `2023`)
