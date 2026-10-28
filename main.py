@@ -27,6 +27,8 @@ def main():
     model_name = experiment["model"]
     if model_name == "ridge_regression":
         from src.models.ridge_regression.run import run_experiment
+    elif model_name == "gradient_boosting":
+        from src.models.gradient_boosting.run import run_experiment
     elif model_name == "ARIMA":
         from src.models.ARIMA.run import run_experiment
     elif model_name == "chronos2":
