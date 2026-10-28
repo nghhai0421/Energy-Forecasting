@@ -1,8 +1,8 @@
-run_name: gradient_boosting_regional_2024
+run_name: gradient_boosting_regional_2023_hourly
 model: gradient_boosting
 
 data:
-  path: Dataset/preprocessed_dataset_1y.csv
+  path: Dataset/preprocessed/preprocessed_dataset_1y_hourly.csv
   timestamp_column: timestamp_utc
   target_column: grid load [MWh]
   frequency: h

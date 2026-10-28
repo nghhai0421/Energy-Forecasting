@@ -19,7 +19,6 @@ from sktime.split import SlidingWindowSplitter, temporal_train_test_split
 
 from src.config import load_run_settings
 from src.models.gradient_boosting.process import load_data
-from src.models.ridge_regression.run import format_results
 from src.outputs.output import save_run_outputs
 from src.outputs.plot import create_forecast_plots, create_tuning_plot
 
@@ -106,6 +105,8 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
     # Run HPO
     if stage in {"hpo", "all"}:
         hpo_settings = settings["hpo"]
+        print(f"Tuning learning rate: {hpo_settings['n_trials']} trials, "
+              f"{cv.get_n_splits(development)} development folds each", flush=True)
         search = ForecastingOptunaSearchCV(
             forecaster=forecaster, cv=cv,
             param_grid={"estimator__learning_rate": FloatDistribution(**hpo_settings["learning_rate"])},
@@ -202,3 +203,71 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
     if stage == "all":
         return {"hpo": hpo_path, "evaluation": evaluation_path}
     return evaluation_path
+
+
+def format_results(evaluations, series, split_manifest):
+    """Convert sktime evaluations to a standard result dict with rows, tables, and splits."""
+    # Format Predictions
+    predictions = []
+    tables = {}
+    split_manifest = split_manifest.copy()
+    dates = series["timestamp"]
+    for split, evaluation in evaluations.items():
+        split_rows = []
+        folds = []
+        for number, (_, result) in enumerate(evaluation.iterrows(), start=1):
+            cutoff = int(result["cutoff"])
+            forecast = result["y_pred"]
+            training = result["y_train"]
+            rows = pd.DataFrame({
+                "split": split,
+                "fold": pd.array([number if split == "cv_validation" else None] * len(forecast), dtype="Int64"),
+                "forecast_origin": dates.iloc[cutoff + 1],
+                "cutoff_timestamp": dates.iloc[cutoff],
+                "target_timestamp": dates.iloc[forecast.index].to_numpy(),
+                "horizon_step": forecast.index.to_numpy() - cutoff,
+                "actual": result["y_test"].reindex(forecast.index).to_numpy(),
+                "prediction": forecast.to_numpy(),
+            })
+            rows["residual"] = rows["actual"] - rows["prediction"]
+            split_rows.append(rows)
+
+            # Record Ranges
+            fold = {"fold": number}
+            for name, positions in (("fit_range", training.index),
+                                    ("evaluation_range", forecast.index)):
+                first, last = int(positions[0]), int(positions[-1])
+                fold[name] = {
+                    "first_row": first, "last_row": last, "n_observations": len(positions),
+                    "start": dates.iloc[first].isoformat(),
+                    "end": dates.iloc[last].isoformat(),
+                }
+            fold["forecast_origin"] = dates.iloc[cutoff + 1].isoformat()
+            folds.append(fold)
+
+        # Record Split
+        rows = pd.concat(split_rows, ignore_index=True)
+        predictions.append(rows)
+        tables[f"{split}_evaluation"] = evaluation.drop(columns=["y_train", "y_test", "y_pred"])
+        if split == "cv_validation":
+            split_manifest["cv_folds"] = folds
+        else:
+            start = split_manifest["development_observations"]
+            scored = int(rows["target_timestamp"].nunique())
+            split_manifest["final_test"] = {
+                "initial_fit_range": folds[0]["fit_range"],
+                "evaluation_range": {
+                    "first_row": start, "last_row": len(series) - 1,
+                    "n_observations": len(series) - start,
+                    "start": dates.iloc[start].isoformat(), "end": dates.iloc[-1].isoformat(),
+                },
+                "folds": folds,
+                "forecast_origins": len(folds),
+                "scored_observations": scored,
+                "unscored_observations": split_manifest["test_observations"] - scored,
+            }
+    return {
+        "predictions": pd.concat(predictions, ignore_index=True),
+        "tables": tables,
+        "split_manifest": split_manifest,
+    }
