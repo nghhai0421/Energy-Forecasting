@@ -13,6 +13,7 @@ Implemented Models:
 - Ridge Regression
 - ARIMA
 - Chronos-2 (pretrained, zero-shot)
+- Gradient Boosting (HistGradientBoostingRegressor through sktime direct reduction)
 
 ## Setup
 
@@ -73,6 +74,39 @@ HPO requires a model YAML with search settings. `--hpo-run` loads the best
 hyperparameters from a saved HPO run. Use `--run-name` to set the run name.
 
 
+## Regional gradient boosting experiment
+
+Run the supplied 2023 hourly regional dataset directly, with calendar features
+and weather observed 24 hours earlier. The model loader does not aggregate again:
+
+```powershell
+$env:OMP_NUM_THREADS = "1"
+python main.py --stage evaluate --exp-cfg configs/experiments/gradient_boosting.yaml --mdl-cfg configs/models/gradient_boosting.yaml
+```
+
+This runner uses the same `evaluate`, `hpo`, `all`, and `--hpo-run` conventions
+as Ridge. The model YAML tunes learning rate; defaults are also in the runner.
+For the configured five-trial learning-rate search followed by evaluation, use
+`--stage all` with the same config paths. Other model parameters remain fixed.
+The result formatter belongs to the gradient boosting runner itself.
+It needs the existing numpy/pandas/scikit-learn/sktime/Optuna/plotting dependencies,
+without requiring torch or pmdarima. Automatic random early-stopping splits are
+disabled; model selection uses chronological development folds only.
+
+The experiment predicts the next 24 elapsed hours, refitting every 24 hours. It
+does not yet implement an auction-timed delivery-day forecast or procurement
+cost simulation. Historical weather is lagged, not treated as an archived weather
+forecast. Prices are excluded because availability at auction time is not established.
+Set `historical_weather: []` in a copied experiment YAML for a calendar-only
+comparison; the same 24-hour warm-up is retained so fold boundaries match.
+The input is `Dataset/preprocessed/preprocessed_dataset_1y_hourly.csv`;
+the loader rejects missing, duplicate, unsorted, or non-hourly timestamps and
+non-finite selected values. Calendar features use Europe/Berlin time, while rows
+are spaced in UTC. Lagged weather assumes no reporting delay.
+See `preprocessing/README.md` for the upstream hourly aggregation policies.
+
+Validate preparation with `python -m unittest discover -s tests`.
+
 ## Outputs
 
 Each run gets a unique folder under `outputs/hpo_runs/` or `outputs/runs/`.
@@ -88,7 +122,7 @@ Saved files:
 - `metrics/cv_validation.json`, `final_test.json`: MAE/RMSE overall and by horizon;
   CV also includes fold scores and their mean.
 - `metrics/*_evaluation.csv`: per-fold scores and timings.
-- `checkpoints/model.joblib`: fitted development model (Ridge/ARIMA).
+- `checkpoints/model.joblib`: fitted development model (Ridge/ARIMA/Gradient Boosting).
 - `logs/error.log`: details if output saving fails.
 
 Timing reports mean fit time, mean prediction time, and total evaluation time

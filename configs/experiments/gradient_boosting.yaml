@@ -1,0 +1,26 @@
+run_name: gradient_boosting_regional_2023_hourly
+model: gradient_boosting
+
+data:
+  path: Dataset/preprocessed/preprocessed_dataset_1y_hourly.csv
+  timestamp_column: timestamp_utc
+  target_column: grid load [MWh]
+  frequency: h
+  weather_lag_hours: 24 # Observations available at every origin; no future weather.
+  historical_weather:
+    - temperature_2m (°C)
+    - relative_humidity_2m (%)
+    - precipitation (mm)
+    - shortwave_radiation (W/m²)
+    - wind_speed_10m (km/h)
+
+forecast:
+  lookback: 24
+  horizon: 24
+  step_length: 24 # Refit every 24 hourly observations, as in the existing runners.
+
+split:
+  test_fraction: 0.2
+  train_window_fraction: 0.8
+
+output_root: outputs

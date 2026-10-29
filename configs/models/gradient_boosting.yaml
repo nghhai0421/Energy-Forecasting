@@ -1,0 +1,15 @@
+# Optional evaluation overrides; defaults also live in the runner.
+learning_rate: 0.1
+max_iter: 50
+max_leaf_nodes: 15
+min_samples_leaf: 30
+l2_regularization: 1.0
+random_state: 42
+
+hpo:
+  n_trials: 5
+  seed: 42
+  learning_rate:
+    low: 0.03
+    high: 0.2
+    log: true

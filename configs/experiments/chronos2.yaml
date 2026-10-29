@@ -3,7 +3,7 @@ run_name: chronos2_hourly
 model: chronos2
 
 data:
-  path: Dataset/energy_hourly.csv
+  path: Dataset/raw/energy_hourly.csv
   timestamp_column: Date from
   target_column: Grid load [MWh] calculated resolutions
   frequency: h
