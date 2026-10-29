@@ -80,7 +80,7 @@ The parent folder is set by `output_root` in the experiment YAML.
 
 Saved files:
 
-- `run_manifest.json`: run settings, status, timings, and summary.
+- `run_manifest.json`: run settings, status, timings, hardware, and summary.
 - `artifacts/split_manifest.json`: development/test boundaries and fold details.
 - `artifacts/selected_parameters.json`: model parameters and their source.
 - `artifacts/hpo_trials.csv`: trial parameters and validation scores (with HPO).
@@ -90,6 +90,12 @@ Saved files:
 - `metrics/*_evaluation.csv`: per-fold scores and timings.
 - `checkpoints/model.joblib`: fitted development model (Ridge/ARIMA).
 - `logs/error.log`: details if output saving fails.
+
+Timing reports mean fit time, mean prediction time, and total evaluation time
+separately for validation and test, in seconds. Means are per forecast origin;
+total evaluation includes fitting, prediction, scoring, and overhead. For Chronos,
+fit means context setup, not weight training. Hardware records the device, CPU
+model, and logical core count. These details also appear in the shell summary.
 
 Graphs in `plots/`:
 

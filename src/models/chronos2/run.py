@@ -93,6 +93,7 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
     # Set Run Metadata
     metadata = {
         "model": experiment["model"],
+        "hardware": {"device": parameters["device_map"]},
         "sktime_version": sktime.__version__,
         "config_files": {"experiment": str(Path(exp_cfg).resolve()), "model": None},
         "inference_mode": "zero_shot",
@@ -116,7 +117,11 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
     # Reset history at each origin; pretrained weights stay unchanged.
     started = perf_counter()
     validation = evaluate_folds(forecaster, cv, development, X, future_columns)
-    timing["validation_seconds"] = perf_counter() - started
+    timing["cv_validation"] = {
+        "total_eval_seconds": perf_counter() - started,
+        "mean_fit_seconds": float(validation["fit_time"].mean()),
+        "mean_predict_seconds": float(validation["pred_time"].mean()),
+    }
 
     # Evaluate Test
     # Start at the test boundary using the latest development history.
@@ -124,7 +129,11 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
     test_cv = SlidingWindowSplitter(fh=fh, window_length=window_length, step_length=step)
     started = perf_counter()
     final = evaluate_folds(forecaster, test_cv, test_history, X, future_columns)
-    timing["test_seconds"] = perf_counter() - started
+    timing["final_test"] = {
+        "total_eval_seconds": perf_counter() - started,
+        "mean_fit_seconds": float(final["fit_time"].mean()),
+        "mean_predict_seconds": float(final["pred_time"].mean()),
+    }
 
     # Save Outputs
     results = format_results(

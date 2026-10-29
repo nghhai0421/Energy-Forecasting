@@ -1,6 +1,8 @@
 """Save run metadata, predictions, metrics, and checkpoints."""
 
 import json
+import os
+import platform
 import re
 import shutil
 import traceback
@@ -57,6 +59,24 @@ def save_run_outputs(results, output_root="outputs", run_name=None,
     # Save Results
     try:
         manifest.update(metadata or {})
+
+        # Record Hardware
+        cpu_model = platform.processor() or "unknown"
+        if platform.system() == "Windows":
+            import winreg
+
+            try:
+                with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
+                                    r"HARDWARE\DESCRIPTION\System\CentralProcessor\0") as key:
+                    cpu_model = winreg.QueryValueEx(key, "ProcessorNameString")[0].strip()
+            except OSError:
+                pass  # Keep the platform fallback.
+        manifest["hardware"] = {
+            "device": "unspecified", **manifest.get("hardware", {}),
+            "cpu_model": cpu_model, "logical_core_count": os.cpu_count(),
+        }
+
+        # Save Manifest
         manifest["status"] = "saving"
         manifest["updated_at_utc"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         temporary.write_text(json.dumps(manifest, **json_options) + "\n", encoding="utf-8")
@@ -79,7 +99,8 @@ def save_run_outputs(results, output_root="outputs", run_name=None,
         temporary.write_text(json.dumps(manifest, **json_options) + "\n", encoding="utf-8")
         temporary.replace(manifest_path)
         raise
-    print(json.dumps(summary, indent=2, allow_nan=False))
+    report = {**summary, "timing": manifest.get("timing", {}), "hardware": manifest["hardware"]}
+    print(json.dumps(report, indent=2, allow_nan=False))
     return run_path
 
 

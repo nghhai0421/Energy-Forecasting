@@ -87,6 +87,7 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
     # Set Run Metadata
     metadata = {
         "model": experiment["model"],
+        "hardware": {"device": "cpu"},
         "sktime_version": sktime.__version__,
         "config_files": {
             "experiment": str(Path(exp_cfg).resolve()),
@@ -165,7 +166,11 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
         model.clone(), cv=cv, y=development, strategy="refit",
         scoring=[MeanAbsoluteError(), rmse], return_data=True, error_score="raise",
     )
-    timing["validation_seconds"] = perf_counter() - started
+    timing["cv_validation"] = {
+        "total_eval_seconds": perf_counter() - started,
+        "mean_fit_seconds": float(validation["fit_time"].mean()),
+        "mean_predict_seconds": float(validation["pred_time"].mean()),
+    }
 
     # Evaluate Test
     # Start with the last development window and retain original row indices.
@@ -176,7 +181,11 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
         model.clone(), cv=test_cv, y=test_history, strategy="refit",
         scoring=[MeanAbsoluteError(), rmse], return_data=True, error_score="raise",
     )
-    timing["test_seconds"] = perf_counter() - started
+    timing["final_test"] = {
+        "total_eval_seconds": perf_counter() - started,
+        "mean_fit_seconds": float(final["fit_time"].mean()),
+        "mean_predict_seconds": float(final["pred_time"].mean()),
+    }
 
     # Format Results
     results = format_results(

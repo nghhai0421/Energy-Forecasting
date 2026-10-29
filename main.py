@@ -31,8 +31,6 @@ def main():
         from src.models.ARIMA.run import run_experiment
     elif model_name == "chronos2":
         from src.models.chronos2.run import run_experiment
-    elif model_name in {"itransformer", "tabpfn_ts"}:
-        raise NotImplementedError(f"{model_name} is still a placeholder.")
     else:
         raise ValueError(f"Unknown model: {model_name}")
 
