@@ -9,11 +9,11 @@ splits, HPO, and evaluation. Each model's runner connects data loading to this
 workflow.
 
 Implemented Models:
-
-- Ridge Regression
 - ARIMA
 - Chronos-2 (pretrained, zero-shot)
 - Gradient Boosting (HistGradientBoostingRegressor through sktime direct reduction)
+
+Under Development: Build a production-style forecasting demo using Azure Databricks and Azure Data Lake, replaying historical data to simulate incoming observations and trigger preprocessing, inference, and forecast storage.
 
 ## Setup
 
