@@ -11,7 +11,16 @@ from src.models.gradient_boosting.process import load_data
 
 
 class PreparationTests(unittest.TestCase):
+    """Check hourly preparation and forecast-origin feature availability."""
+
     def setUp(self):
+        """Create a temporary hourly regional dataset and loader settings.
+
+        Returns
+        -------
+        None
+            This function returns no value.
+        """
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
         self.path = Path(self.directory.name) / "data.csv"
@@ -25,10 +34,24 @@ class PreparationTests(unittest.TestCase):
                            weather_lag_hours=24)
 
     def load(self):
+        """Write the synthetic CSV and load a 24-hour forecasting fixture.
+
+        Returns
+        -------
+        tuple
+            Prepared target, features, timestamp/target rows, and metadata.
+        """
         self.raw.to_csv(self.path, index=False)
         return load_data(self.config, 24)
 
     def test_hourly_values_preserved_and_dst_continuity(self):
+        """Verify hourly values, lag alignment, and UTC continuity across DST.
+
+        Returns
+        -------
+        None
+            This function returns no value.
+        """
         y, X, series, _ = self.load()
         self.assertTrue(y.eq(1).all())
         self.assertEqual(len(y), 96)
@@ -36,6 +59,13 @@ class PreparationTests(unittest.TestCase):
         self.assertEqual(X.iloc[0]["temperature_lag_24h"], 0)
 
     def test_future_observations_cannot_change_horizon_features(self):
+        """Verify future observations cannot change forecast-horizon inputs.
+
+        Returns
+        -------
+        None
+            This function returns no value.
+        """
         _, before, _, _ = self.load()
         # Origin is the end of raw hour 59; forecast hours 60..83 use weather 36..59.
         self.raw.loc[60:, ["temperature", "load"]] = 100000
@@ -43,6 +73,13 @@ class PreparationTests(unittest.TestCase):
         pd.testing.assert_frame_equal(before.iloc[36:60], after.iloc[36:60])
 
     def test_gaps_and_short_weather_lags_rejected(self):
+        """Verify missing hours and insufficient weather lags are rejected.
+
+        Returns
+        -------
+        None
+            This function returns no value.
+        """
         self.config["weather_lag_hours"] = 23
         with self.assertRaisesRegex(ValueError, "Weather lag"):
             self.load()
@@ -52,6 +89,13 @@ class PreparationTests(unittest.TestCase):
             self.load()
 
     def test_quarter_hourly_and_duplicate_inputs_rejected(self):
+        """Verify quarter-hourly and duplicate timestamps are rejected.
+
+        Returns
+        -------
+        None
+            This function returns no value.
+        """
         self.raw["timestamp_utc"] = pd.date_range("2024-01-01", periods=120, freq="15min", tz="UTC")
         with self.assertRaisesRegex(ValueError, "hourly"):
             self.load()
@@ -60,6 +104,13 @@ class PreparationTests(unittest.TestCase):
             self.load()
 
     def test_calendar_only_retains_identical_rows(self):
+        """Verify feature selection preserves target rows and timestamps.
+
+        Returns
+        -------
+        None
+            This function returns no value.
+        """
         y, _, series, _ = self.load()
         self.config["historical_weather"] = []
         other_y, X, other_series, _ = self.load()

@@ -26,11 +26,34 @@ from src.outputs.plot import create_forecast_plots, create_tuning_plot
 
 def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
                    stage="evaluate", hpo_run=None):
-    """Fit/evaluate Ridge or tune its parameters.
+    """Tune or evaluate Ridge with chronological validation and held-out testing.
 
-    Input: experiment YAML path, optional model YAML path and run name.
-    stage: evaluate (default), hpo, or all; hpo_run: saved HPO folder for evaluate.
-    Output: run folder Path; all returns a dict with hpo and evaluation Paths.
+    Parameters
+    ----------
+    exp_cfg : str or pathlib.Path
+        Experiment YAML path defining data, splits, forecasts, and output root.
+    mdl_cfg : str or pathlib.Path or None, default None
+        Optional model overrides; an hpo section is required for tuning.
+    run_name : str or None, default None
+        Run label; defaults to the experiment configuration's run name.
+    stage : {'evaluate', 'hpo', 'all'}, default 'evaluate'
+        Evaluate, tune on development folds, or tune and then evaluate.
+    hpo_run : str or pathlib.Path or None, default None
+        Completed HPO run to reuse during evaluation.
+
+    Returns
+    -------
+    pathlib.Path or dict
+        Saved run directory; 'all' returns hpo and evaluation directory paths.
+
+    Raises
+    ------
+    ValueError
+        If stage, HPO settings, or a supplied HPO run is invalid.
+
+    Notes
+    -----
+    Parameter selection uses development validation scores only.
     """
     if stage not in {"all", "hpo", "evaluate"}:
         raise ValueError(f"Unknown run stage: {stage}")
@@ -212,7 +235,22 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
 
 
 def format_results(evaluations, series, split_manifest):
-    """Convert sktime evaluations to a standard result dict with rows, tables, and splits."""
+    """Convert rolling forecast evaluations into standardized results.
+
+    Parameters
+    ----------
+    evaluations : dict of pandas.DataFrame
+        Split names mapped to fold rows with cutoff, y_train, y_test, and y_pred.
+    series : pandas.DataFrame
+        Timestamp and target columns aligned with the evaluation row indices.
+    split_manifest : dict
+        Development/test observation counts and chronological split settings.
+
+    Returns
+    -------
+    dict
+        Prediction rows, evaluation tables, and split boundaries in a copied manifest.
+    """
     # Format Predictions
     predictions = []
     tables = {}

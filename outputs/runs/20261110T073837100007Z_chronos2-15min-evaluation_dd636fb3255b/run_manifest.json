@@ -1,0 +1,199 @@
+{
+  "run_id": "20261110T073837100007Z_chronos2-15min-evaluation_dd636fb3255b",
+  "created_at_utc": "2026-11-10T07:38:37.100007Z",
+  "status": "completed",
+  "run_name": "chronos2_15min_evaluation",
+  "model": "chronos2",
+  "hardware": {
+    "device": "cpu",
+    "cpu_model": "AMD Ryzen 7 PRO 4750U with Radeon Graphics",
+    "logical_core_count": 16
+  },
+  "sktime_version": "1.2.0",
+  "config_files": {
+    "experiment": "C:\\Users\\LENOVO\\Documents\\Personal\\Study\\Master\\Mannheim University\\HWS 2026\\AI Deployment and Operation\\configs\\experiments\\chronos2.yaml",
+    "model": null
+  },
+  "inference_mode": "zero_shot",
+  "model_revision": null,
+  "data": {
+    "sources": {
+      "consumption": {
+        "development": "C:\\Users\\LENOVO\\Documents\\Personal\\Study\\Master\\Mannheim University\\HWS 2026\\AI Deployment and Operation\\Dataset\\raw\\csv\\Actual_consumption_2023_2024_Quarterhour.csv",
+        "demo": "C:\\Users\\LENOVO\\Documents\\Personal\\Study\\Master\\Mannheim University\\HWS 2026\\AI Deployment and Operation\\Dataset\\raw\\csv\\Actual_consumption_2025_Quarterhour.csv",
+        "timestamp_column": "Start date",
+        "timezone": "Europe/Berlin",
+        "columns": [
+          "grid load [MWh]",
+          "Grid load incl. hydro pumped storage [MWh]",
+          "Hydro pumped storage [MWh]"
+        ]
+      },
+      "weather": {
+        "development": "C:\\Users\\LENOVO\\Documents\\Personal\\Study\\Master\\Mannheim University\\HWS 2026\\AI Deployment and Operation\\Dataset\\raw\\csv\\open-meteo-48.83N9.15E293m_2023_2024.csv",
+        "demo": "C:\\Users\\LENOVO\\Documents\\Personal\\Study\\Master\\Mannheim University\\HWS 2026\\AI Deployment and Operation\\Dataset\\raw\\csv\\open-meteo-48.83N9.15E293m_2025.csv",
+        "timestamp_column": "time",
+        "timezone": "+02:00",
+        "columns": [
+          "temperature_2m (°C)",
+          "wind_speed_10m (km/h)",
+          "dew_point_2m (°C)"
+        ]
+      },
+      "holidays": {
+        "path": "C:\\Users\\LENOVO\\Documents\\Personal\\Study\\Master\\Mannheim University\\HWS 2026\\AI Deployment and Operation\\Dataset\\raw\\csv\\df_holiday.csv",
+        "date_column": "Datum",
+        "timezone": "Europe/Berlin"
+      }
+    },
+    "timestamp_column": "timestamp_utc",
+    "target_column": "Residual load [MWh]",
+    "frequency": "15min",
+    "covariates": {
+      "historical": [
+        "grid load [MWh]",
+        "Grid load incl. hydro pumped storage [MWh]",
+        "Hydro pumped storage [MWh]",
+        "temperature_2m (°C)",
+        "wind_speed_10m (km/h)",
+        "dew_point_2m (°C)"
+      ],
+      "future": [
+        "is_holiday",
+        "calendar_second_of_minute_sin",
+        "calendar_second_of_minute_cos",
+        "calendar_minute_of_hour_sin",
+        "calendar_minute_of_hour_cos",
+        "calendar_hour_of_day_sin",
+        "calendar_hour_of_day_cos",
+        "calendar_day_of_week_sin",
+        "calendar_day_of_week_cos",
+        "calendar_day_of_month_sin",
+        "calendar_day_of_month_cos",
+        "calendar_day_of_year_sin",
+        "calendar_day_of_year_cos",
+        "calendar_week_of_year_sin",
+        "calendar_week_of_year_cos",
+        "calendar_month_of_year_sin",
+        "calendar_month_of_year_cos",
+        "calendar_year"
+      ]
+    }
+  },
+  "preparation": {
+    "period": "development",
+    "frequency": "15min",
+    "rows": 70176,
+    "weather_alignment_missing_rows": 4,
+    "imputation": {
+      "method": "expanding mean of prior valid observations",
+      "columns": {
+        "Residual load [MWh]": {
+          "missing_or_nonnumeric": 1,
+          "invalid_negative": 0,
+          "imputed": 1
+        },
+        "grid load [MWh]": {
+          "missing_or_nonnumeric": 0,
+          "invalid_negative": 0,
+          "imputed": 0
+        },
+        "Grid load incl. hydro pumped storage [MWh]": {
+          "missing_or_nonnumeric": 0,
+          "invalid_negative": 0,
+          "imputed": 0
+        },
+        "Hydro pumped storage [MWh]": {
+          "missing_or_nonnumeric": 0,
+          "invalid_negative": 0,
+          "imputed": 0
+        },
+        "temperature_2m (°C)": {
+          "missing_or_nonnumeric": 4,
+          "invalid_negative": 0,
+          "imputed": 4
+        },
+        "wind_speed_10m (km/h)": {
+          "missing_or_nonnumeric": 4,
+          "invalid_negative": 0,
+          "imputed": 4
+        },
+        "dew_point_2m (°C)": {
+          "missing_or_nonnumeric": 4,
+          "invalid_negative": 0,
+          "imputed": 4
+        }
+      }
+    },
+    "unobserved_targets": 1,
+    "historical_covariates": [
+      "grid load [MWh]",
+      "Grid load incl. hydro pumped storage [MWh]",
+      "Hydro pumped storage [MWh]",
+      "temperature_2m (°C)",
+      "wind_speed_10m (km/h)",
+      "dew_point_2m (°C)"
+    ],
+    "future_covariates": [
+      "is_holiday",
+      "calendar_second_of_minute_sin",
+      "calendar_second_of_minute_cos",
+      "calendar_minute_of_hour_sin",
+      "calendar_minute_of_hour_cos",
+      "calendar_hour_of_day_sin",
+      "calendar_hour_of_day_cos",
+      "calendar_day_of_week_sin",
+      "calendar_day_of_week_cos",
+      "calendar_day_of_month_sin",
+      "calendar_day_of_month_cos",
+      "calendar_day_of_year_sin",
+      "calendar_day_of_year_cos",
+      "calendar_week_of_year_sin",
+      "calendar_week_of_year_cos",
+      "calendar_month_of_year_sin",
+      "calendar_month_of_year_cos",
+      "calendar_year"
+    ],
+    "calendar_timezone": "Europe/Berlin"
+  },
+  "forecast": {
+    "lookback": 672,
+    "horizon": 96,
+    "step_length": 96
+  },
+  "timing": {
+    "load_seconds": 89.39058749983087,
+    "cv_validation": {
+      "total_eval_seconds": 210.51594599988312,
+      "mean_fit_seconds": 0.009826802582367612,
+      "mean_predict_seconds": 1.7743244017133135
+    },
+    "final_test": {
+      "total_eval_seconds": 254.53036299999803,
+      "mean_fit_seconds": 0.010317441093582303,
+      "mean_predict_seconds": 1.7018608020567527
+    }
+  },
+  "run_stage": "evaluation",
+  "updated_at_utc": "2026-11-10T07:38:38.607394Z",
+  "summary": {
+    "cv_mean_fold": {
+      "mae": 217.70475192179623,
+      "rmse": 281.9238769272756
+    },
+    "final_test": {
+      "n_predictions": 14016,
+      "mae": 171.50911770999159,
+      "rmse": 259.24069033635857
+    },
+    "selected_parameters": {
+      "model_path": "amazon/chronos-2",
+      "context_length": 672,
+      "device_map": "cpu",
+      "torch_dtype": "float32",
+      "limit_prediction_length": true,
+      "seed": 42
+    },
+    "parameter_source": "defaults"
+  }
+}

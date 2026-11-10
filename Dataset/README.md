@@ -6,6 +6,15 @@ This directory contains both the **raw input datasets** (`Dataset/raw/`) and the
 
 ## 1. Raw Datasets (`Dataset/raw/`)
 
+Excel sources live in `raw/xlsx/`. CSV files live in `raw/csv/`.
+`preprocessing/convert_raw_to_csv.py` exports the six 2023?2024 and 2025
+consumption, price, and weather tables plus `df_holiday.xlsx`, using the original
+filenames with `.csv`. Existing CSV exports are skipped.
+Exports omit the metadata preambles. The Excel sources retain the metadata,
+including Open-Meteo's fixed UTC+2 offset. Existing energy CSVs retain their
+semicolon delimiter; the six new exports use commas and UTF-8 with BOM.
+See the [conversion guide](../preprocessing/README.md#raw-excel-to-csv).
+
 ### 1.1 Actual Electricity Consumption (SMARD)
 - **Source**: [SMARD Market Data Download Center](https://www.smard.de/en/downloadcenter/download-market-data/)
 - **Region**: TransnetBW, Baden-Württemberg
@@ -14,9 +23,9 @@ This directory contains both the **raw input datasets** (`Dataset/raw/`) and the
   - `grid load [MWh]` *(Target variable)*
   - Additional columns in raw file: `Start date`, `End date`, `Grid load incl. hydro pumped storage [MWh]`, `Hydro pumped storage [MWh]`, `Residual load [MWh]`
 - **Files**:
-  - `raw/Actual_consumption_201701010000_202601010000_Quarterhour.xlsx`: Full period (`01.01.201` – `31.12.2025`)
-  - `raw/Actual_consumption_2023_2024_Quarterhour.xlsx`: 2023–2024 split (`01.01.2023` – `31.12.2024`)
-  - `raw/Actual_consumption_2025_Quarterhour.xlsx`: 2025 Jan–Nov split (`01.01.2025` – `30.11.2025`)
+  - `raw/xlsx/Actual_consumption_201701010000_202601010000_Quarterhour.xlsx`: Full period (`01.01.201` – `31.12.2025`)
+  - `raw/xlsx/Actual_consumption_2023_2024_Quarterhour.xlsx`: 2023–2024 split (`01.01.2023` – `31.12.2024`)
+  - `raw/xlsx/Actual_consumption_2025_Quarterhour.xlsx`: 2025 Jan–Nov split (`01.01.2025` – `30.11.2025`)
 
 ### 1.2 Day-Ahead Electricity Prices (SMARD)
 - **Source**: [SMARD Market Data Download Center](https://www.smard.de/en/downloadcenter/download-market-data/)
@@ -25,9 +34,9 @@ This directory contains both the **raw input datasets** (`Dataset/raw/`) and the
 - **Key Variables**:
   - `Germany/Luxembourg [€/MWh]` *(available from `01.10.2018` – `31.12.2025`)*
 - **Files**:
-  - `raw/Day-ahead_prices_201701010000_202601010000_Quarterhour.xlsx`: Full period (`01.01.2017` – `31.12.2025`)
-  - `raw/Day-ahead_prices_2023_2024_Quarterhour.xlsx`: 2023–2024 split (`01.01.2023` – `31.12.2024`)
-  - `raw/Day-ahead_prices_2025_Quarterhour.xlsx`: 2025 Jan–Nov split (`01.01.2025` – `30.11.2025`)
+  - `raw/xlsx/Day-ahead_prices_201701010000_202601010000_Quarterhour.xlsx`: Full period (`01.01.2017` – `31.12.2025`)
+  - `raw/xlsx/Day-ahead_prices_2023_2024_Quarterhour.xlsx`: 2023–2024 split (`01.01.2023` – `31.12.2024`)
+  - `raw/xlsx/Day-ahead_prices_2025_Quarterhour.xlsx`: 2025 Jan–Nov split (`01.01.2025` – `30.11.2025`)
 
 ### 1.3 Historical Weather Data (Open-Meteo)
 - **Source**: [Open-Meteo Historical Weather API](https://open-meteo.com/en/docs/historical-weather-api)
@@ -72,13 +81,13 @@ This directory contains both the **raw input datasets** (`Dataset/raw/`) and the
     - `"99"`: `"Thunderstorm with heavy hail"`
   - Additional columns in raw file: `direct_radiation (W/m²)`, `sunshine_duration (s)`
 - **Files**:
-  - `raw/open-meteo-48.83N9.15E293m.xlsx`: Full period (`2017-01-01` – `2025-12-13`)
-  - `raw/open-meteo-48.83N9.15E293m_2023_2024.xlsx`: 2023–2024 split (`2023-01-01` – `2024-12-31`)
-  - `raw/open-meteo-48.83N9.15E293m_2025.xlsx`: 2025 Jan–Nov split (`2025-01-01` – `2025-11-30`)
+  - `raw/xlsx/open-meteo-48.83N9.15E293m.xlsx`: Full period (`2017-01-01` – `2025-12-13`)
+  - `raw/xlsx/open-meteo-48.83N9.15E293m_2023_2024.xlsx`: 2023–2024 split (`2023-01-01` – `2024-12-31`)
+  - `raw/xlsx/open-meteo-48.83N9.15E293m_2025.xlsx`: 2025 Jan–Nov split (`2025-01-01` – `2025-11-30`)
 
 ### 1.4 Public Holiday Data (Baden-Württemberg)
-- **File**: `raw/df_holiday.xlsx`
-- **Source**: Generated in `raw/split_raw_datasets.ipynb` via Python `holidays` library (`holidays.Germany(years=range(2023, 2027), subdiv="BW")`)
+- **File**: `raw/xlsx/df_holiday.xlsx`
+- **Source**: Generated in [`preprocessing/split_raw_datasets.ipynb`](../preprocessing/split_raw_datasets.ipynb) via Python `holidays` library (`holidays.Germany(years=range(2023, 2026), subdiv="BW")`)
 - **Region**: Baden-Württemberg (`BW`)
 - **Columns & Variables**:
   - Raw columns: `Datum` (date), `Feiertag` (holiday name)
@@ -86,12 +95,12 @@ This directory contains both the **raw input datasets** (`Dataset/raw/`) and the
 
 ### 1.5 Additional SMARD Calculated-Resolution CSV Datasets (2019–2024)
 Semicolon-delimited (`;`) SMARD exports covering `01.01.2019` – `01.01.2025`
-- `raw/energy_hourly.csv`: Hourly resolution (`52,608` rows)
-- `raw/energy_daily.csv`: Daily resolution (`2,192` rows)
+- `raw/csv/energy_hourly.csv`: Hourly resolution (`52,608` rows)
+- `raw/csv/energy_daily.csv`: Daily resolution (`2,192` rows)
 
 ### 1.6 Dataset Splitting & Holiday Generation Notebook
-- **File**: `raw/split_raw_datasets.ipynb`
-- **Purpose**: Splits the 3 full-period raw Excel datasets into the 6 subsets for **`2023–2024`** (`70,176` rows each) and **`2025 (Jan–Nov)`** (`32,064` rows each) while preserving their original metadata preamble rows (`skiprows=9` for SMARD, `skiprows=3` for Open-Meteo), and generates `raw/df_holiday.xlsx`.
+- **File**: [`preprocessing/split_raw_datasets.ipynb`](../preprocessing/split_raw_datasets.ipynb)
+- **Purpose**: Splits the 3 full-period raw Excel datasets into the 6 subsets for **`2023–2024`** (`70,176` rows each) and **`2025 (Jan–Nov)`** (`32,064` rows each) while preserving their original metadata preamble rows (`skiprows=9` for SMARD, `skiprows=3` for Open-Meteo), and generates `raw/xlsx/df_holiday.xlsx`.
 
 ---
 

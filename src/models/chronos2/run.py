@@ -6,23 +6,42 @@ from time import perf_counter
 import numpy as np
 import pandas as pd
 import sktime
-import torch
-from sktime.forecasting.chronos2 import Chronos2Forecaster
 from sktime.performance_metrics.forecasting import MeanAbsoluteError, MeanSquaredError
 from sktime.split import SlidingWindowSplitter, temporal_train_test_split
 
 from src.config import load_run_settings
+from src.models.chronos2.inference import forecast, load_forecaster
+from src.models.chronos2.process import load_data, prepare_future_covariates
 from src.outputs.output import save_run_outputs
 from src.outputs.plot import create_forecast_plots
 
 
 def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
                    stage="evaluate", hpo_run=None):
-    """Evaluate pretrained Chronos-2.
+    """Evaluate pretrained Chronos-2 on chronological development and test folds.
 
-    Input: experiment YAML path and optional run name; stage must be evaluate.
-    mdl_cfg and hpo_run are unused and must be omitted.
-    Output: run folder Path containing predictions, metrics, metadata, and plots.
+    Parameters
+    ----------
+    exp_cfg : str or pathlib.Path
+        Experiment YAML path defining data, splits, forecasts, and output root.
+    mdl_cfg : None, default None
+        Reserved for the common runner interface; must be omitted.
+    run_name : str or None, default None
+        Run label; defaults to the experiment configuration's run name.
+    stage : {'evaluate'}, default 'evaluate'
+        Run zero-shot evaluation.
+    hpo_run : None, default None
+        Reserved for the common runner interface; must be omitted.
+
+    Returns
+    -------
+    pathlib.Path
+        Run directory containing saved predictions, metrics, metadata, and plots.
+
+    Raises
+    ------
+    ValueError
+        If HPO options are supplied or a full forecast window is unavailable.
     """
     if stage != "evaluate" or hpo_run is not None:
         raise ValueError("Chronos-2 supports zero-shot evaluation only; omit HPO options.")
@@ -37,20 +56,9 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
     step = experiment["forecast"]["step_length"]
     output_root = experiment["output_root"]
     run_name = run_name if run_name is not None else experiment["run_name"]
-    covariates = dataset.get("covariates", {})
-    historical_columns = covariates.get("historical", [])
-    future_columns = covariates.get("future", [])
-    covariate_columns = historical_columns + future_columns
 
     # Load Data
-    raw = pd.read_csv(dataset["path"], sep=";", decimal=",", thousands=".")
-    dates = pd.to_datetime(raw[dataset["timestamp_column"]], format="%d.%m.%Y %H:%M")
-    # SMARD uses Berlin time; infer repeated autumn hours in file order.
-    dates = dates.dt.tz_localize("Europe/Berlin", ambiguous="infer").dt.tz_convert("UTC")
-    values = pd.to_numeric(raw[dataset["target_column"]]).to_numpy(dtype=float)
-    series = pd.DataFrame({"timestamp": dates, "target": values})
-    y = pd.Series(values, name=dataset["target_column"])
-    X = raw[covariate_columns].apply(pd.to_numeric).astype(float) if covariate_columns else None
+    y, X, series, preparation = load_data(dataset)
 
     # Split Data
     test_size = int(len(y) * experiment["split"]["test_fraction"])
@@ -66,29 +74,10 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
     cv = SlidingWindowSplitter(fh=fh, window_length=window_length, step_length=step)
 
     # Load Model
-    parameters = {
-        "model_path": "amazon/chronos-2",
-        "context_length": lookback,
-        "device_map": "cpu",
-        "torch_dtype": "float32",
-        "limit_prediction_length": True,
-        "seed": 42,
-    }
-    forecaster = Chronos2Forecaster(
-        model_path=parameters["model_path"], seed=parameters["seed"],
-        config={
-            "context_length": lookback,
-            "device_map": parameters["device_map"],
-            "torch_dtype": torch.float32,
-            "limit_prediction_length": parameters["limit_prediction_length"],
-        },
-    )
-    started = perf_counter()
-    # fit loads cached pretrained weights and sets context
-    development_X = X.loc[development.index] if X is not None else None
-    forecaster.fit(development, X=development_X, fh=fh)
-    timing = {"load_seconds": perf_counter() - started}
-    revision = getattr(forecaster.model_pipeline.model.config, "_commit_hash", None)
+    loaded = load_forecaster(development, X.loc[development.index], context_length=lookback)
+    forecaster = loaded["forecaster"]
+    parameters = loaded["parameters"]
+    timing = {"load_seconds": loaded["load_seconds"]}
 
     # Set Run Metadata
     metadata = {
@@ -97,8 +86,9 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
         "sktime_version": sktime.__version__,
         "config_files": {"experiment": str(Path(exp_cfg).resolve()), "model": None},
         "inference_mode": "zero_shot",
-        "model_revision": revision,
+        "model_revision": loaded["revision"],
         "data": dataset,
+        "preparation": preparation,
         "forecast": experiment["forecast"],
         "timing": timing,
         "run_stage": "evaluation",
@@ -116,7 +106,7 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
     # Evaluate CV
     # Reset history at each origin; pretrained weights stay unchanged.
     started = perf_counter()
-    validation = evaluate_folds(forecaster, cv, development, X, future_columns)
+    validation = evaluate_folds(forecaster, cv, development, X, series, dataset)
     timing["cv_validation"] = {
         "total_eval_seconds": perf_counter() - started,
         "mean_fit_seconds": float(validation["fit_time"].mean()),
@@ -128,7 +118,7 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
     test_history = y.iloc[len(development) - window_length:]
     test_cv = SlidingWindowSplitter(fh=fh, window_length=window_length, step_length=step)
     started = perf_counter()
-    final = evaluate_folds(forecaster, test_cv, test_history, X, future_columns)
+    final = evaluate_folds(forecaster, test_cv, test_history, X, series, dataset)
     timing["final_test"] = {
         "total_eval_seconds": perf_counter() - started,
         "mean_fit_seconds": float(final["fit_time"].mean()),
@@ -151,31 +141,58 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
     return evaluation_path
 
 
-def evaluate_folds(forecaster, cv, y, X=None, future_columns=None):
-    """Evaluate y/X folds, passing only future_columns at prediction; return fold rows."""
+def evaluate_folds(forecaster, cv, y, X, series, dataset):
+    """Evaluate chronological folds using available historical and future covariates.
+
+    Parameters
+    ----------
+    forecaster : sktime forecaster
+        Loaded forecaster whose context is replaced for each fold.
+    cv : sktime splitter
+        Chronological splitter exposing split(y) and fh.
+    y : pandas.Series
+        Target observations with indices aligned to X.
+    X : pandas.DataFrame
+        Historical and known-future covariates indexed like y.
+    series : pandas.DataFrame
+        Original timestamp/target rows indexed like y. Missing targets are excluded
+        from scoring while imputed y remains available as model context.
+    dataset : dict
+        Data settings used to generate calendar and holiday horizon inputs.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Fold predictions, training/test targets, MAE/RMSE, cutoffs, and timings.
+
+    Raises
+    ------
+    ValueError
+        If a fold contains no observed targets for scoring.
+    """
     mae = MeanAbsoluteError()
     rmse = MeanSquaredError(square_root=True)
     evaluations = []
     for train_positions, test_positions in cv.split(y):
         # Set History
         training = y.iloc[train_positions]
-        actual = y.iloc[test_positions]
-        history_X = X.loc[training.index] if X is not None else None
-        model = forecaster.clone()
-        started = perf_counter()
-        model.fit(training, X=history_X, fh=cv.fh)
-        fit_time = perf_counter() - started
+        test_index = y.iloc[test_positions].index
+        actual = series.loc[test_index, "target"]
+        history_X = X.loc[training.index]
 
         # Forecast
-        # Past values include both groups; only known-future columns enter the horizon.
-        future_X = X.loc[actual.index, future_columns] if future_columns else None
-        started = perf_counter()
-        prediction = model.predict(fh=cv.fh, X=future_X)
-        pred_time = perf_counter() - started
+        future_X = prepare_future_covariates(series.loc[test_index, "timestamp"], dataset)
+        result = forecast(forecaster, training, history_X, future_X)
+        prediction = result["prediction"]
+        observed = actual.notna()
+        if not observed.any():
+            raise ValueError("Each evaluation fold needs at least one observed target.")
+        scored_actual = actual[observed].to_numpy()
+        scored_prediction = prediction.loc[actual.index[observed]].to_numpy()
         evaluations.append({
-            f"test_{mae.name}": float(mae(actual, prediction)),
-            f"test_{rmse.name}": float(rmse(actual, prediction)),
-            "fit_time": fit_time, "pred_time": pred_time,
+            f"test_{mae.name}": float(mae(scored_actual, scored_prediction)),
+            f"test_{rmse.name}": float(rmse(scored_actual, scored_prediction)),
+            "fit_time": result["fit_seconds"], "pred_time": result["predict_seconds"],
             "len_train_window": len(training), "cutoff": int(training.index[-1]),
             "y_train": training, "y_test": actual, "y_pred": prediction,
         })
@@ -183,7 +200,22 @@ def evaluate_folds(forecaster, cv, y, X=None, future_columns=None):
 
 
 def format_results(evaluations, series, split_manifest):
-    """Convert rolling evaluations and timestamps to standard rows, tables, and splits."""
+    """Convert rolling forecast evaluations into standardized results.
+
+    Parameters
+    ----------
+    evaluations : dict of pandas.DataFrame
+        Split names mapped to fold rows with cutoff, y_train, y_test, and y_pred.
+    series : pandas.DataFrame
+        Timestamp and target columns aligned with the evaluation row indices.
+    split_manifest : dict
+        Split counts and window settings; Chronos-2 also requires context_length.
+
+    Returns
+    -------
+    dict
+        Prediction rows, evaluation tables, and split boundaries in a copied manifest.
+    """
     # Format Predictions
     predictions = []
     tables = {}
@@ -206,6 +238,7 @@ def format_results(evaluations, series, split_manifest):
                 "actual": result["y_test"].reindex(forecast.index).to_numpy(),
                 "prediction": forecast.to_numpy(),
             })
+            rows = rows.dropna(subset=["actual"])
             rows["residual"] = rows["actual"] - rows["prediction"]
             split_rows.append(rows)
 

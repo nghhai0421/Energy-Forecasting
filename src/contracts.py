@@ -5,7 +5,15 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Fold:
-    """Store train and validation index tuples in an immutable fold."""
+    """Store immutable training and validation row indices.
+
+    Parameters
+    ----------
+    train_indices : tuple of int
+        Positions used for model fitting.
+    validation_indices : tuple of int
+        Positions used for validation.
+    """
 
     train_indices: tuple[int, ...]
     validation_indices: tuple[int, ...]

@@ -17,10 +17,34 @@ from src.evaluation.metrics import summarize_predictions
 
 def save_run_outputs(results, output_root="outputs", run_name=None,
                      metadata=None, stage="evaluation"):
-    """Save finished results; return the new run Path.
+    """Save run results and metadata in a unique UTC-based directory.
 
-    Input: standardized result dict; predictions for evaluation or trials for HPO.
-    Optional checkpoint_path is an exported file/folder. Save failures are logged.
+    Parameters
+    ----------
+    results : dict
+        Standard evaluation results or HPO trials, selection, and split manifest.
+    output_root : str or pathlib.Path, default 'outputs'
+        Root containing runs and hpo_runs directories.
+    run_name : str or None, default None
+        Optional label included in the unique run directory name.
+    metadata : dict or None, default None
+        Run configuration, hardware, timings, and other manifest fields.
+    stage : {'evaluation', 'hpo'}, default 'evaluation'
+        Select evaluation or HPO output layout.
+
+    Returns
+    -------
+    pathlib.Path
+        Created run directory with manifest, artifacts, and logs.
+
+    Raises
+    ------
+    ValueError
+        If the stage, result schema, or strict JSON values are invalid.
+
+    Notes
+    -----
+    Save failures are logged and recorded in the manifest before being re-raised.
     """
     # Set Run ID
     stage_folders = {"hpo": "hpo_runs", "evaluation": "runs"}
@@ -105,7 +129,25 @@ def save_run_outputs(results, output_root="outputs", run_name=None,
 
 
 def save_hpo_results(run_path, results):
-    """Save trials, selected_parameters, and split_manifest; return an HPO summary."""
+    """Save trial history, selected parameters, and split metadata.
+
+    Parameters
+    ----------
+    run_path : pathlib.Path
+        Existing run directory with an artifacts subdirectory.
+    results : dict
+        trials with trial/score columns, selected_parameters, and split_manifest.
+
+    Returns
+    -------
+    dict
+        Selected parameters, validation score, metric, and trial count.
+
+    Raises
+    ------
+    ValueError
+        If required trial columns are missing.
+    """
     # Save Trials
     trials = pd.DataFrame(results["trials"])
     required = {"trial", "score"}
@@ -129,10 +171,30 @@ def save_hpo_results(run_path, results):
 
 
 def save_results(run_path, results):
-    """Save prediction rows and split details; return metrics and artifact paths.
+    """Save standardized predictions, metrics, and optional model artifacts.
 
-    Optional fields: selected_parameters, trials, tables, checkpoint_path.
-    Checkpoints are exported by the model runner before this call.
+    Parameters
+    ----------
+    run_path : pathlib.Path
+        Existing run directory with prediction, metric, artifact, and checkpoint folders.
+    results : dict
+        predictions and split_manifest; optional selected_parameters, trials,
+        tables, and exported checkpoint_path.
+
+    Returns
+    -------
+    dict
+        Split metrics, parameter selection, and copied checkpoint path when supplied.
+
+    Raises
+    ------
+    ValueError
+        If prediction rows, split/fold fields, trials, or table filenames are invalid.
+
+    Notes
+    -----
+    Predictions require split, forecast_origin, target_timestamp, horizon_step,
+    actual, and prediction; validation rows also require fold.
     """
     # Check Predictions
     predictions = results["predictions"]

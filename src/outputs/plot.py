@@ -12,7 +12,20 @@ import matplotlib.pyplot as plt
 
 
 def create_forecast_plots(run_path: Path, series) -> None:
-    """Read saved predictions at run_path and timestamped series; write PNG plots."""
+    """Write forecast, horizon-error, and residual plots from saved results.
+
+    Parameters
+    ----------
+    run_path : str or pathlib.Path
+        Completed run containing final-test predictions, metrics, and split manifest.
+    series : pandas.DataFrame
+        Chronologically sorted timestamp and target columns with timezone-aware dates.
+
+    Returns
+    -------
+    None
+        PNG files are written to the run's plots directory.
+    """
     # Load Predictions
     run_path = Path(run_path)
     output = run_path / "plots"
@@ -84,7 +97,18 @@ def create_forecast_plots(run_path: Path, series) -> None:
 
 
 def create_tuning_plot(run_path: Path) -> None:
-    """Read standardized trials and selection at run_path; write the tuning PNG."""
+    """Plot validation trial scores and the cumulative best score.
+
+    Parameters
+    ----------
+    run_path : str or pathlib.Path
+        Run containing hpo_trials.csv and selected_parameters.json in artifacts.
+
+    Returns
+    -------
+    None
+        Optuna validation history PNG is written to the plots directory.
+    """
     # Load Trials
     run_path = Path(run_path)
     output = run_path / "plots"

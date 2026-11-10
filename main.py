@@ -7,7 +7,22 @@ from src.config import load_run_settings
 
 
 def main():
-    """Read CLI options and start the selected experiment; print saved run paths."""
+    """Parse command-line options and run the configured model.
+
+    Returns
+    -------
+    None
+        Run outputs are saved by the selected runner.
+
+    Raises
+    ------
+    ValueError
+        If the experiment selects an unknown model.
+
+    Notes
+    -----
+    Reads configuration paths, stage, HPO source, and run name from CLI arguments.
+    """
     # Read Args
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--exp-cfg", type=Path, required=True,

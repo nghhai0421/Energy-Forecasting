@@ -8,7 +8,25 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 def load_run_settings(exp_cfg, mdl_cfg=None):
-    """Read experiment YAML and optional model YAML; return settings and overrides."""
+    """Load experiment settings and optional model overrides.
+
+    Parameters
+    ----------
+    exp_cfg : str or pathlib.Path
+        Experiment YAML path defining data, splits, forecasts, and output root.
+    mdl_cfg : str or pathlib.Path or None, default None
+        Optional model/HPO YAML path.
+
+    Returns
+    -------
+    tuple of dict
+        Experiment with resolved dataset/output paths and model overrides.
+
+    Raises
+    ------
+    ValueError
+        If YAML content, split fractions, or forecast settings are invalid.
+    """
     # Load Configs
     configs = []
     for path in (exp_cfg, mdl_cfg):
@@ -23,7 +41,14 @@ def load_run_settings(exp_cfg, mdl_cfg=None):
     experiment, settings = configs
 
     # Resolve Paths
-    experiment["data"]["path"] = str((PROJECT_ROOT / experiment["data"]["path"]).resolve())
+    dataset = experiment["data"]
+    if "sources" in dataset:
+        for source in dataset["sources"].values():
+            for key in ("path", "development", "demo"):
+                if key in source:
+                    source[key] = str((PROJECT_ROOT / source[key]).resolve())
+    else:
+        dataset["path"] = str((PROJECT_ROOT / dataset["path"]).resolve())
     experiment["output_root"] = str((PROJECT_ROOT / experiment["output_root"]).resolve())
 
     # Check Settings

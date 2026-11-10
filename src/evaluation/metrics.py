@@ -5,12 +5,22 @@ from sktime.performance_metrics.forecasting import MeanAbsoluteError, MeanSquare
 
 
 def summarize_predictions(predictions):
-    """Summarize MAE and RMSE.
+    """Calculate overall, horizon, and validation-fold MAE and RMSE.
 
-    Input: nonempty DataFrame with split, actual, prediction, and horizon_step
-    columns for one split. cv_validation also needs fold.
-    Output: dict with split, overall, and by_horizon metrics; cv_validation
-    also includes folds and mean_fold (equal weight per fold).
+    Parameters
+    ----------
+    predictions : pandas.DataFrame
+        Nonempty rows for one split with actual, prediction, split, and
+        horizon_step columns; cv_validation also requires fold.
+
+    Returns
+    -------
+    dict
+        Overall and per-horizon metrics, plus validation-fold metrics when applicable.
+
+    Notes
+    -----
+    Validation mean_fold gives each fold equal weight.
     """
     mae = MeanAbsoluteError()
     rmse = MeanSquaredError(square_root=True)

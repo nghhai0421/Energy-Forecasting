@@ -16,7 +16,7 @@ for candidate in (project_start, *project_start.parents):
         break
 
 DATASET_DIR = PROJECT_ROOT / "Dataset"
-RAW_DIR = DATASET_DIR / "raw"
+RAW_DIR = DATASET_DIR / "raw" / "xlsx"
 PREPROCESSED_DIR = DATASET_DIR / "preprocessed"
 PREPROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -33,7 +33,7 @@ PREPROCESSED_1Y_HOURLY_FILE = PREPROCESSED_DIR / "preprocessed_dataset_1y_hourly
 PREPROCESSED_5Y_15MIN_FILE = PREPROCESSED_DIR / "preprocessed_dataset_5y_15min.csv"
 PREPROCESSED_5Y_HOURLY_FILE = PREPROCESSED_DIR / "preprocessed_dataset_5y_hourly.csv"
 
-# Set Timeframe Constants (Europe/Berlin calendar years)
+# Set Berlin Year Ranges
 FIVE_YEAR_RANGE = (2019, 2023)
 ONE_YEAR = 2023
 
@@ -54,24 +54,52 @@ TIMESTAMP_COLS = ["timestamp_utc", "timestamp_berlin"]
 
 
 def parse_timestamp_series(series: pd.Series) -> pd.Series:
-    """Parse timestamps consistently across datetime, Excel serial, or English string formats."""
+    """Parse datetime, Excel serial, or English SMARD timestamps.
+
+    Parameters
+    ----------
+    series : pandas.Series
+        Datetimes, Excel serial days, or strings formatted as '%b %d, %Y %I:%M %p'.
+
+    Returns
+    -------
+    pandas.Series
+        Parsed datetimes; invalid strings become NaT and Excel serials round to minutes.
+    """
     if pd.api.types.is_datetime64_any_dtype(series):
         return series
     if pd.api.types.is_numeric_dtype(series):
         return pd.to_datetime(series, unit="D", origin="1899-12-30").dt.round("min")
-    # Use C locale so English month names ('Mar', 'May', 'Oct') and 'AM'/'PM' parse on German Windows
+    # Parse English month names consistently across system locales.
     locale.setlocale(locale.LC_TIME, "C")
     return pd.to_datetime(series, format="%b %d, %Y %I:%M %p", errors="coerce")
 
 
 def build_merged_dataset_from_raw(save_path: Path = MERGED_FILE) -> pd.DataFrame:
-    """Build and save the merged 15-minute dataset from raw Excel files (matching exploration.ipynb)."""
+    """Combine raw consumption, prices, weather, and generated BW holidays.
+
+    Parameters
+    ----------
+    save_path : pathlib.Path, default MERGED_FILE
+        Destination CSV; parent directories are created.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Merged 15-minute rows with UTC/Berlin timestamps and holiday indicator.
+
+    Notes
+    -----
+    Reads configured raw Excel paths and writes the holiday workbook and merged CSV.
+    SMARD uses Berlin local time; weather uses fixed UTC+2. Prices forward-fill
+    up to three quarter-hours before merging on UTC timestamps.
+    """
     print("Loading raw datasets from:", RAW_DIR)
     raw_consumption = pd.read_excel(CONSUMPTION_FILE, skiprows=9)
     raw_prices = pd.read_excel(PRICES_FILE, skiprows=9)
     raw_weather = pd.read_excel(WEATHER_FILE, skiprows=3)
 
-    # Generate & save Baden-Württemberg (BW) holiday table
+    # Save BW Holidays
     bw_holidays = holidays.Germany(years=range(2017, 2027), subdiv="BW")
     df_holidays = (
         pd.DataFrame(list(bw_holidays.items()), columns=["Datum", "Feiertag"])
@@ -81,7 +109,7 @@ def build_merged_dataset_from_raw(save_path: Path = MERGED_FILE) -> pd.DataFrame
     df_holidays["Datum"] = pd.to_datetime(df_holidays["Datum"])
     df_holidays.to_excel(HOLIDAY_FILE, index=False)
 
-    # 1. Consumption
+    # Prepare Consumption
     cons_berlin = parse_timestamp_series(raw_consumption["Start date"]).dt.tz_localize(
         "Europe/Berlin", ambiguous="infer"
     )
@@ -91,7 +119,7 @@ def build_merged_dataset_from_raw(save_path: Path = MERGED_FILE) -> pd.DataFrame
         TARGET_COL: pd.to_numeric(raw_consumption[TARGET_COL], errors="coerce"),
     })
 
-    # 2. Day-Ahead Prices (repeat hourly value up to 4 quarter-hours)
+    # Repeat hourly prices across up to four quarter-hours.
     prices_berlin = parse_timestamp_series(raw_prices["Start date"]).dt.tz_localize(
         "Europe/Berlin", ambiguous="infer"
     )
@@ -101,7 +129,7 @@ def build_merged_dataset_from_raw(save_path: Path = MERGED_FILE) -> pd.DataFrame
         PRICE_COL: price_series,
     })
 
-    # 3. Open-Meteo Weather (fixed UTC+2 offset)
+    # Convert fixed UTC+2 weather timestamps to UTC.
     fixed_utc_plus_2 = timezone(timedelta(hours=2))
     weather_ts_utc = (
         parse_timestamp_series(raw_weather["time"])
@@ -112,7 +140,7 @@ def build_merged_dataset_from_raw(save_path: Path = MERGED_FILE) -> pd.DataFrame
     for col in WEATHER_COLS:
         weather_df[col] = pd.to_numeric(raw_weather[col], errors="coerce")
 
-    # 4. Merge on UTC timestamp & add BW holiday indicator
+    # Merge Data
     merged_df = (
         cons_df.merge(prices_df, on="timestamp_utc", how="inner")
         .merge(weather_df, on="timestamp_utc", how="inner")
@@ -130,7 +158,18 @@ def build_merged_dataset_from_raw(save_path: Path = MERGED_FILE) -> pd.DataFrame
 
 
 def load_merged_dataset(path: Path = MERGED_FILE) -> pd.DataFrame:
-    """Load a merged CSV path, generating it from raw files if absent; return timezone-aware rows."""
+    """Load the merged dataset and normalize its timestamp columns.
+
+    Parameters
+    ----------
+    path : pathlib.Path, default MERGED_FILE
+        Merged CSV path; generated from raw inputs when absent.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Rows with timezone-aware UTC and Berlin timestamps.
+    """
     if not path.is_file():
         print(f"{path} not found. Generating merged dataset from raw files...")
         df = build_merged_dataset_from_raw(save_path=path)
@@ -145,7 +184,24 @@ def load_merged_dataset(path: Path = MERGED_FILE) -> pd.DataFrame:
 
 
 def check_na_distribution(df: pd.DataFrame, stage_label: str) -> pd.DataFrame:
-    """Print missingness for timestamped rows and a stage label; return the report."""
+    """Summarize and print missing values by column.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Rows containing timestamp_utc, timestamp_berlin, and data columns.
+    stage_label : str
+        Processing stage shown in the console report.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Column types, missing counts/percentages, blocks, and timestamp ranges.
+
+    Notes
+    -----
+    Percentages use the total input row count as the denominator.
+    """
     print(f"\nNA distribution ({stage_label})")
 
     # Count Missing Values
@@ -188,7 +244,22 @@ def check_na_distribution(df: pd.DataFrame, stage_label: str) -> pd.DataFrame:
 
 
 def impute_prior_mean(df: pd.DataFrame) -> pd.DataFrame:
-    """Impute numeric NAs using the causal mean of all prior values; leave weather_code as-is."""
+    """Fill missing numeric values with the mean of preceding observations.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Chronologically ordered rows with the configured data columns.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Copy with causal imputations; timestamps, weather codes, and holidays are unchanged.
+
+    Notes
+    -----
+    Leading missing values remain missing until a prior observation is available.
+    """
     out = df.copy()
     numeric_cols = [
         col for col in out.columns
@@ -204,10 +275,38 @@ def impute_prior_mean(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def resample_to_hourly(df_15min: pd.DataFrame) -> pd.DataFrame:
-    """Aggregate a 15-minute preprocessed DataFrame to hourly ('1h') resolution on UTC timestamps."""
+    """Aggregate prepared 15-minute observations onto hourly UTC timestamps.
+
+    Parameters
+    ----------
+    df_15min : pandas.DataFrame
+        Prepared rows with UTC timestamps, load, price, weather, and holiday columns.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Hourly rows with Berlin timestamps and categorical weather codes.
+
+    Notes
+    -----
+    Load and precipitation are summed; prices and continuous weather are averaged.
+    Weather codes use the mode and holidays use the maximum.
+    """
     categories = df_15min[WEATHER_CODE_COL].cat.categories if hasattr(df_15min[WEATHER_CODE_COL], "cat") else None
 
     def _mode_or_first(series: pd.Series):
+        """Select a nonmissing mode with a first-value fallback.
+
+        Parameters
+        ----------
+        series : pandas.Series
+            Values within one aggregation group.
+
+        Returns
+        -------
+        scalar
+            First mode, first valid value if no mode exists, or pandas.NA for an empty group.
+        """
         valid = series.dropna()
         if valid.empty:
             return pd.NA
@@ -235,7 +334,7 @@ def resample_to_hourly(df_15min: pd.DataFrame) -> pd.DataFrame:
     )
     hourly.insert(1, "timestamp_berlin", hourly["timestamp_utc"].dt.tz_convert("Europe/Berlin"))
 
-    # Restore categorical dtype for weather_code (wmo code)
+    # Restore Weather Categories
     codes = pd.to_numeric(hourly[WEATHER_CODE_COL], errors="coerce").round().astype("Int64")
     if categories is not None:
         hourly[WEATHER_CODE_COL] = pd.Categorical(codes, categories=categories)
@@ -247,14 +346,45 @@ def resample_to_hourly(df_15min: pd.DataFrame) -> pd.DataFrame:
 
 
 def slice_berlin_years(df: pd.DataFrame, start_year: int, end_year: int) -> pd.DataFrame:
-    """Return rows whose Europe/Berlin timestamp falls within [start_year, end_year] inclusive."""
+    """Select an inclusive range of Berlin calendar years.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Rows containing a datetime timestamp_berlin column.
+    start_year : int
+        First included calendar year.
+    end_year : int
+        Last included calendar year.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Selected rows copied with a reset index.
+    """
     years = df["timestamp_berlin"].dt.year
     mask = (years >= start_year) & (years <= end_year)
     return df.loc[mask].copy().reset_index(drop=True)
 
 
 def run_preprocessing() -> dict[str, pd.DataFrame]:
-    """Read the merged CSV, preprocess price-period rows, and save 1-year and 5-year (15min & hourly) datasets."""
+    """Prepare and save the configured one-year and five-year dataset variants.
+
+    Returns
+    -------
+    dict of str to pandas.DataFrame
+        1y_15min, 1y_hourly, 5y_15min, and 5y_hourly datasets.
+
+    Raises
+    ------
+    ValueError
+        If the price column has no valid observations.
+
+    Notes
+    -----
+    Uses module paths and Berlin year settings; trims to available prices, imputes
+    causally, and overwrites the four prepared CSVs.
+    """
     # Load Data
     df = load_merged_dataset()
     check_na_distribution(df, stage_label="Before Chopping to Price Timeframe")
@@ -279,14 +409,14 @@ def run_preprocessing() -> dict[str, pd.DataFrame]:
     categories = list(df[WEATHER_CODE_COL].cat.categories)
     print(f"Categories ({len(categories)}): {categories}")
 
-    # Check Missing Values & Impute Prior Mean
+    # Impute Missing Values
     check_na_distribution(df, stage_label="After Chopping to Price Timeframe")
     df = impute_prior_mean(df)
 
-    # Build Hourly Dataset from 15-Minute Preprocessed Dataset
+    # Aggregate Hourly
     df_hourly = resample_to_hourly(df)
 
-    # Slice 1-Year and 5-Year (2019-2023) Subsets for 15-min and Hourly Resolutions
+    # Slice Year Ranges
     start_5y, end_5y = FIVE_YEAR_RANGE
     df_5y_15min = slice_berlin_years(df, start_5y, end_5y)
     df_5y_hourly = slice_berlin_years(df_hourly, start_5y, end_5y)
