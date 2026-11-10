@@ -5,11 +5,30 @@ import pandas as pd
 
 
 def load_data(dataset, horizon):
-    """Return hourly target, origin-safe features, timestamps, and preparation metadata."""
-    # Load the already aggregated hourly CSV.
+    """Load hourly targets and forecast-origin-safe regional features.
+
+    Parameters
+    ----------
+    dataset : dict
+        CSV path, timestamp_column, target_column, and optional historical_weather.
+        frequency defaults to 'h'; weather_lag_hours defaults to 24.
+    horizon : int
+        Forecast horizon in hours; the weather lag must cover it.
+
+    Returns
+    -------
+    tuple of pandas.Series, pandas.DataFrame, pandas.DataFrame, dict
+        Target, features, timestamp/target rows, and preparation metadata after warm-up.
+
+    Raises
+    ------
+    ValueError
+        If the hourly grid, selected values, row count, or weather lag is invalid.
+    """
+    # Load Data
     raw = pd.read_csv(dataset["path"])
     dates = pd.to_datetime(raw[dataset["timestamp_column"]], utc=True)
-    # Validate UTC order and spacing, including local DST transitions.
+    # Check Hourly Grid
     if dataset.get("frequency", "h") != "h":
         raise ValueError("This loader expects frequency: h and hourly input data.")
     if len(raw) <= dataset.get("weather_lag_hours", 24):
@@ -18,7 +37,7 @@ def load_data(dataset, horizon):
         raise ValueError("Timestamps must be valid, unique and sorted in UTC.")
     if not dates.diff().dropna().eq(pd.Timedelta(hours=1)).all():
         raise ValueError("Expected a complete hourly UTC grid; no implicit filling or aggregation.")
-    # Select load and historical weather; prices are not forecast-time inputs.
+    # Select Available Inputs
     target = dataset["target_column"]
     weather = dataset.get("historical_weather", [])
     columns = [target, "is_holiday", *weather]
@@ -27,21 +46,21 @@ def load_data(dataset, horizon):
         raise ValueError("Selected columns must be finite and complete.")
     numeric.index = pd.DatetimeIndex(dates)
     hourly = numeric
-    # Every horizon step must use weather observed by the forecast origin.
+    # Check Weather Availability
     lag = dataset.get("weather_lag_hours", 24)
     if lag < horizon:
         raise ValueError("Weather lag must cover the entire horizon to prevent leakage.")
-    # Calendar features follow local time; model rows stay on the UTC grid.
+    # Calendar values use Berlin time; row spacing stays in UTC.
     local = hourly.index.tz_convert("Europe/Berlin")
     X = pd.DataFrame(index=hourly.index)
     X["hour"] = local.hour
     X["weekday"] = local.dayofweek
     X["month"] = local.month
     X["is_holiday"] = hourly["is_holiday"]
-    # Shift observed weather instead of exposing realized future weather.
+    # Lag Weather
     for column in weather:
         X[f"{column}_lag_{lag}h"] = hourly[column].shift(lag)
-    # Trim the same warm-up rows with and without weather for comparable splits.
+    # Use identical warm-up trimming for comparable feature variants.
     X = X.iloc[lag:].reset_index(drop=True)
     hourly = hourly.iloc[lag:]
     y = hourly[target].reset_index(drop=True)

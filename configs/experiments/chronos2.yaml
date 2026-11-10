@@ -1,23 +1,69 @@
-run_name: chronos2_hourly
+run_name: chronos2_15min
 
 model: chronos2
 
 data:
-  path: Dataset/raw/energy_hourly.csv
-  timestamp_column: Date from
-  target_column: Grid load [MWh] calculated resolutions
-  frequency: h
+  sources:
+    consumption:
+      development: Dataset/raw/csv/Actual_consumption_2023_2024_Quarterhour.csv
+      demo: Dataset/raw/csv/Actual_consumption_2025_Quarterhour.csv
+      timestamp_column: Start date
+      timezone: Europe/Berlin
+      columns:
+        - grid load [MWh]
+        - Grid load incl. hydro pumped storage [MWh]
+        - Hydro pumped storage [MWh]
+
+    weather:
+      development: Dataset/raw/csv/open-meteo-48.83N9.15E293m_2023_2024.csv
+      demo: Dataset/raw/csv/open-meteo-48.83N9.15E293m_2025.csv
+      timestamp_column: time
+      timezone: "+02:00" # Open-Meteo uses a fixed offset throughout the year.
+      columns:
+        - temperature_2m (°C)
+        - wind_speed_10m (km/h)
+        - dew_point_2m (°C)
+
+    holidays:
+      path: Dataset/raw/csv/df_holiday.csv
+      date_column: Datum
+      timezone: Europe/Berlin
+
+  timestamp_column: timestamp_utc
+  target_column: Residual load [MWh]
+  frequency: 15min
   covariates:
     historical:
-      - Grid load incl. pumped storage [MWh] calculated resolutions
-      - Pumped storage [MWh] calculated resolutions
-      - Residual load [MWh] calculated resolutions
-    future: [] # Only features known at the forecast origin.
+      - grid load [MWh]
+      - Grid load incl. hydro pumped storage [MWh]
+      - Hydro pumped storage [MWh]
+      - temperature_2m (°C)
+      - wind_speed_10m (km/h)
+      - dew_point_2m (°C)
+    future:
+      - is_holiday
+      - calendar_second_of_minute_sin
+      - calendar_second_of_minute_cos
+      - calendar_minute_of_hour_sin
+      - calendar_minute_of_hour_cos
+      - calendar_hour_of_day_sin
+      - calendar_hour_of_day_cos
+      - calendar_day_of_week_sin
+      - calendar_day_of_week_cos
+      - calendar_day_of_month_sin
+      - calendar_day_of_month_cos
+      - calendar_day_of_year_sin
+      - calendar_day_of_year_cos
+      - calendar_week_of_year_sin
+      - calendar_week_of_year_cos
+      - calendar_month_of_year_sin
+      - calendar_month_of_year_cos
+      - calendar_year
 
 forecast:
-  lookback: 168
-  horizon: 24
-  step_length: 24
+  lookback: 672 # Seven days at 15-minute resolution.
+  horizon: 96 # Forecast the next 24 hours.
+  step_length: 96 # Advance the evaluation origin by 24 hours.
 
 split:
   test_fraction: 0.2

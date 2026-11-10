@@ -1,0 +1,11 @@
+{
+  "parameters": {
+    "model_path": "amazon/chronos-2",
+    "context_length": 672,
+    "device_map": "cpu",
+    "torch_dtype": "float32",
+    "limit_prediction_length": true,
+    "seed": 42
+  },
+  "source": "defaults"
+}
