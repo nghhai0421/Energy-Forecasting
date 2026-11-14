@@ -28,7 +28,9 @@ def plot_demo(spark, settings):
     target = dataset["target_column"]
     model_id = settings["model"]["id"]
     timezone = settings["plot"]["timezone"]
-    forecasts = spark.table(tables["forecasts"]).where(F.col("model_id") == model_id)
+    coverage = 0.8
+    selected = (F.col("model_id") == model_id) & (F.col("interval_coverage") == coverage)
+    forecasts = spark.table(tables["forecasts"]).where(selected)
     origins = forecasts.select("forecast_origin").distinct().orderBy(F.desc("forecast_origin")).limit(2).toPandas()
     latest = pd.to_datetime(origins["forecast_origin"], utc=True).iloc[0]
     simulated_time = latest + pd.Timedelta(dataset["frequency"])
@@ -44,7 +46,7 @@ def plot_demo(spark, settings):
     previous = forecasts.where(F.col("forecast_origin") == F.lit(comparison.to_pydatetime())).orderBy("target_timestamp").toPandas()
     end = latest + pd.Timedelta(hours=settings["plot"]["future_hours"])
     previous = previous.loc[pd.to_datetime(previous["target_timestamp"], utc=True).le(end)]
-    metrics = spark.table(tables["metrics"]).where(F.col("model_id") == model_id).orderBy("horizon_step").toPandas()
+    metrics = spark.table(tables["metrics"]).where(selected).orderBy("horizon_step").toPandas()
     one_hour = metrics.loc[metrics["horizon_step"].eq(4)]
     status = {"model_id": model_id, "simulated_time": simulated_time,
               "forecast_origin": latest, "n_predictions": 0, "mae": None, "rmse": None}
@@ -59,7 +61,7 @@ def plot_demo(spark, settings):
     axes[0].fill_between(
         pd.to_datetime(current["target_timestamp"], utc=True).dt.tz_convert(timezone),
         current["prediction_lower"].to_numpy(), current["prediction_upper"].to_numpy(),
-        color="tab:blue", alpha=0.2, label="80% prediction interval",
+        color="tab:blue", alpha=0.2, label="Prediction interval",
     )
     if comparison != latest:
         axes[0].plot(pd.to_datetime(previous["target_timestamp"], utc=True).dt.tz_convert(timezone), previous["prediction"], label="Previously issued forecast", color="tab:orange")

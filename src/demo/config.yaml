@@ -8,6 +8,10 @@ tables:
   forecasts: energy_prediction.default.demo_forecasts
   actuals: energy_prediction.default.demo_forecast_actuals
   metrics: energy_prediction.default.demo_metrics
+  dashboard_config: energy_prediction.default.dashboard_config
+  dashboard_status: energy_prediction.default.dashboard_status
+  dashboard_chart: energy_prediction.default.dashboard_chart
+  dashboard_metrics: energy_prediction.default.dashboard_metrics
 
 forecast:
   lookback: 672

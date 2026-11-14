@@ -28,10 +28,12 @@ sys.path.insert(0, str(project_root))
 import matplotlib.pyplot as plt
 from src.demo.run import initialize_demo, load_demo_config, reset_demo, run_demo
 from src.demo.plot import plot_demo
+from src.demo.storage import sync_dashboard_config
 
 settings = load_demo_config()
 model = None
 spark.conf.set("spark.sql.session.timeZone", "UTC")
+sync_dashboard_config(spark, settings)
 
 # COMMAND ----------
 

@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
-from src.demo.storage import initialize_storage
+from src.demo.storage import initialize_storage, sync_dashboard_config
 from src.models.chronos2.inference import forecast, load_forecaster
 from src.models.chronos2.process import load_data, prepare_future_covariates
 
@@ -133,6 +133,7 @@ def run_demo(spark, settings, model=None):
     reset the demo before replaying it. Use one writer at a time.
     """
     # Read Current Time
+    sync_dashboard_config(spark, settings)
     spark.conf.set("spark.sql.session.timeZone", "UTC")
     dataset = settings["data"]
     tables = settings["tables"]
