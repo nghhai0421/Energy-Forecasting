@@ -6,16 +6,21 @@ import pandas as pd
 from preprocessing.add_seasonal_features import add_seasonal_features
 
 
-def load_data(dataset, period="development"):
+def load_data(dataset, period="development", after=None, until=None, strict=False):
     """Prepare aligned targets and covariates from the configured CSV sources.
 
     Parameters
     ----------
     dataset : dict
         Sources, timestamp_column, target_column, frequency, and covariate groups.
-        Source paths must be resolved before loading.
+        Source paths must be resolved before loading. A period may contain a
+        list of CSV paths, read in chronological file order.
     period : {'development', 'demo'}, default 'development'
         Consumption and weather file group to read.
+    after, until : timezone-aware timestamp or None, default None
+        Select observations in (after, until] before value preparation.
+    strict : bool, default False
+        Reject missing/invalid values and incomplete weather alignment.
 
     Returns
     -------
@@ -66,7 +71,8 @@ def load_data(dataset, period="development"):
     frames = {}
     for name in ("consumption", "weather"):
         source = sources[name]
-        raw = pd.read_csv(source[period])
+        paths = source[period] if isinstance(source[period], list) else [source[period]]
+        raw = pd.concat([pd.read_csv(path) for path in paths], ignore_index=True)
         column = source["timestamp_column"]
         date_format = "%b %d, %Y %I:%M %p" if name == "consumption" else "%Y-%m-%d %H:%M:%S"
         dates = pd.to_datetime(raw[column], format=date_format, errors="raise")
@@ -78,9 +84,14 @@ def load_data(dataset, period="development"):
             raise ValueError(f"{name} timestamps must be unique and sorted in UTC.")
         if not dates.diff().dropna().eq(frequency).all() or dates.empty:
             raise ValueError(f"{name} must contain a complete 15-minute UTC grid.")
+        selected = pd.Series(True, index=raw.index)
+        if after is not None:
+            selected &= dates.gt(pd.Timestamp(after))
+        if until is not None:
+            selected &= dates.le(pd.Timestamp(until))
         columns = [target, *consumption_columns] if name == "consumption" else weather_columns
-        frame = raw[columns].apply(pd.to_numeric, errors="coerce")
-        frame.index = pd.DatetimeIndex(dates, name=timestamp)
+        frame = raw.loc[selected, columns].apply(pd.to_numeric, errors="coerce")
+        frame.index = pd.DatetimeIndex(dates[selected], name=timestamp)
         frames[name] = frame
 
     # Align Weather
@@ -88,6 +99,8 @@ def load_data(dataset, period="development"):
     if not combined.index.isin(frames["weather"].index).any():
         raise ValueError("Consumption and weather timestamps do not overlap.")
     missing_weather_rows = int((~combined.index.isin(frames["weather"].index)).sum())
+    if strict and missing_weather_rows:
+        raise ValueError(f"Strict preparation requires weather for all consumption timestamps; missing {missing_weather_rows} rows.")
     combined = combined.replace([np.inf, -np.inf], np.nan)
     observed = combined[target].copy()
 
@@ -98,6 +111,8 @@ def load_data(dataset, period="development"):
         invalid_negative = values.lt(0) if column.startswith("wind_speed_") else pd.Series(False, index=values.index)
         valid = values.mask(invalid_negative)
         missing = valid.isna()
+        if strict and missing.any():
+            raise ValueError(f"Strict preparation found {int(missing.sum())} invalid values in {column}.")
         combined[column] = valid.fillna(valid.expanding(min_periods=1).mean().shift(1))
         if combined[column].isna().any():
             raise ValueError(f"Cannot mean-impute leading missing values in {column}; prior history is required.")
@@ -141,6 +156,7 @@ def prepare_future_covariates(timestamps, dataset):
     dataset : dict
         Timestamp column, frequency, source timezones, holiday CSV path, and
         ordered future covariate names from the experiment configuration.
+        The holiday source may supply additional_dates as ISO date strings.
 
     Returns
     -------
@@ -186,6 +202,10 @@ def prepare_future_covariates(timestamps, dataset):
     source = dataset["sources"]["holidays"]
     holidays = pd.read_csv(source["path"])
     holiday_dates = pd.to_datetime(holidays[source["date_column"]], errors="raise")
+    if source.get("additional_dates"):
+        holiday_dates = pd.concat([
+            holiday_dates, pd.Series(pd.to_datetime(source["additional_dates"], errors="raise")),
+        ], ignore_index=True)
     if holiday_dates.isna().any():
         raise ValueError("Holiday dates must not be missing.")
     local_dates = dates.dt.tz_convert(source["timezone"])
