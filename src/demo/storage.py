@@ -43,7 +43,8 @@ def initialize_storage(spark, settings, baseline, reset=False):
         {command} {tables['forecasts']} (
             split STRING, model_id STRING, model_path STRING, model_revision STRING,
             forecast_origin TIMESTAMP, target_timestamp TIMESTAMP, horizon_step BIGINT,
-            prediction DOUBLE, created_at TIMESTAMP, parameters_json STRING
+            prediction DOUBLE, prediction_lower DOUBLE, prediction_upper DOUBLE,
+            interval_coverage DOUBLE, created_at TIMESTAMP, parameters_json STRING
         ) USING DELTA
     """)
 
@@ -53,7 +54,10 @@ def initialize_storage(spark, settings, baseline, reset=False):
         SELECT f.*, a.observed_target AS actual,
                a.observed_target - f.prediction AS error,
                abs(a.observed_target - f.prediction) AS absolute_error,
-               power(a.observed_target - f.prediction, 2) AS squared_error
+               power(a.observed_target - f.prediction, 2) AS squared_error,
+               CASE WHEN a.observed_target BETWEEN f.prediction_lower AND f.prediction_upper
+                    THEN 1.0 ELSE 0.0 END AS interval_hit,
+               f.prediction_upper - f.prediction_lower AS interval_width
         FROM {tables['forecasts']} f
         JOIN {tables['inputs']} a ON f.target_timestamp = a.`{timestamp}`
         WHERE a.observed_target IS NOT NULL
@@ -61,7 +65,8 @@ def initialize_storage(spark, settings, baseline, reset=False):
     spark.sql(f"""
         CREATE OR REPLACE VIEW {tables['metrics']} AS
         SELECT model_id, horizon_step, count(*) AS n_predictions,
-               avg(absolute_error) AS mae, sqrt(avg(squared_error)) AS rmse
+               avg(absolute_error) AS mae, sqrt(avg(squared_error)) AS rmse,
+               avg(interval_hit) AS empirical_coverage, avg(interval_width) AS mean_interval_width
         FROM {tables['actuals']}
         GROUP BY model_id, horizon_step
     """)

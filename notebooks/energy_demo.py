@@ -40,6 +40,8 @@ spark.conf.set("spark.sql.session.timeZone", "UTC")
 # MAGIC For a resumed session, skip initialization and run the next cell.
 # MAGIC Each replay call releases one hour and then forecasts. If a call fails
 # MAGIC after writing observations, use Reset Demo before starting again.
+# MAGIC After pulling the uncertainty-band update, reset existing demo tables once
+# MAGIC to create the lower/upper prediction columns before advancing again.
 
 # COMMAND ----------
 

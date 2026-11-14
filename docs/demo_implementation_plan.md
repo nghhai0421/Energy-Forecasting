@@ -32,7 +32,7 @@ Source files remain in `/Volumes/energy_prediction/default/raw_data`. All models
 | Advance per call | One hour: four observations |
 | Lookback | Seven days: 672 observations |
 | Forecast | Next 24 hours: 96 observations |
-| Main chart | Previous 24 hours of actuals and next three hours of forecasts |
+| Main chart | Previous three hours of actuals and next three hours of forecasts |
 
 The historical baseline uses the existing causal prior-mean imputation. Original targets are preserved in `observed_target` for scoring. Incoming batches use strict validation.
 
@@ -45,11 +45,13 @@ Initialization fills only the input table. Forecasts and evaluation results star
 | Object in `energy_prediction.default` | Contents |
 |---|---|
 | `demo_model_inputs` | UTC timestamp, prepared target/covariates, original target |
-| `demo_forecasts` | Model ID/path/revision, origin, target timestamp, horizon step, prediction, creation time, parameters |
+| `demo_forecasts` | Model ID/path/revision, origin, target timestamp, horizon step, median prediction, 10th/90th percentile bounds, nominal coverage, creation time, parameters |
 | `demo_forecast_actuals` | View joining forecasts to released actuals and calculating errors |
-| `demo_metrics` | View reporting MAE, RMSE and scored count by model and horizon |
+| `demo_metrics` | View reporting MAE, RMSE, scored count, empirical interval coverage and mean interval width by model and horizon |
 
 Issued forecasts remain unchanged when actuals arrive. Metrics exclude unavailable actuals and group overlapping forecasts by lead time. Values retain MWh per quarter-hour units.
+
+The demo saves a nominal 80% prediction interval in `prediction_lower` and `prediction_upper`, with `interval_coverage = 0.8`. Its point prediction remains the median. Chronos produces all three quantiles in one native pipeline call; the existing point-only experiment path remains unchanged. Empirical coverage is the fraction of scored actuals inside the saved bounds and must be checked against the nominal level.
 
 ## Core workflow
 
@@ -92,6 +94,8 @@ plt.show()
 Subsequent calls use `run_demo(spark, settings, model=result["model"])`. Use the notebook's reset cell to start over, including after changing model or forecast settings.
 
 The main chart combines recent actuals (black), the latest forecast (blue), and the previous origin's forecast (orange). A dashed orange line marks the previous origin; a dotted grey line marks simulated current time. Both forecasts use the configured future display window. A second chart shows errors by horizon. One-hour-ahead score cards use `horizon_step=4`.
+
+The latest forecast has a light blue 80% prediction band. After pulling this update, reset existing demo tables once to recreate their schema with interval columns. For an AI/BI dashboard, refresh the forecast dataset schema and use `prediction_lower`/`prediction_upper` as its lower/upper band values; the notebook change does not modify the dashboard layout.
 
 These are notebook charts using notebook compute. Analytics → Dashboards is the separate AI/BI interface; it can query the same Delta tables/views through a SQL warehouse. That dashboard has not been created by this implementation.
 
