@@ -91,7 +91,9 @@ plt.show()
 
 Subsequent calls use `run_demo(spark, settings, model=result["model"])`. Use the notebook's reset cell to start over, including after changing model or forecast settings.
 
-Charts show the latest forecast, the previous origin's forecast against released actuals, and errors by horizon. One-hour-ahead score cards use `horizon_step=4`. All charts use notebook compute; an AI/BI dashboard and SQL warehouse are optional later.
+The main chart combines recent actuals (black), the latest forecast (blue), and the previous origin's forecast (orange). A dashed orange line marks the previous origin; a dotted grey line marks simulated current time. Both forecasts use the configured future display window. A second chart shows errors by horizon. One-hour-ahead score cards use `horizon_step=4`.
+
+These are notebook charts using notebook compute. Analytics → Dashboards is the separate AI/BI interface; it can query the same Delta tables/views through a SQL warehouse. That dashboard has not been created by this implementation.
 
 ## Verification
 
