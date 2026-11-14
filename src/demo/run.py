@@ -153,7 +153,9 @@ def run_demo(spark, settings, model=None):
     batch[dataset["target_column"]] = y
     batch[timestamp] = series["timestamp"]
     batch["observed_target"] = series["target"]
-    spark.createDataFrame(batch, spark.table(tables["inputs"]).schema).write.mode("append").saveAsTable(tables["inputs"])
+    input_schema = spark.table(tables["inputs"]).schema
+    batch = batch[input_schema.fieldNames()]
+    spark.createDataFrame(batch, input_schema).write.mode("append").saveAsTable(tables["inputs"])
 
     # Read Context
     lookback = settings["forecast"]["lookback"]
@@ -187,5 +189,7 @@ def run_demo(spark, settings, model=None):
         "created_at": pd.Timestamp.now(tz="UTC"),
         "parameters_json": json.dumps({**model["parameters"], "quantile_levels": [0.1, 0.5, 0.9]}),
     })
-    spark.createDataFrame(predictions, spark.table(tables["forecasts"]).schema).write.mode("append").saveAsTable(tables["forecasts"])
+    forecast_schema = spark.table(tables["forecasts"]).schema
+    predictions = predictions[forecast_schema.fieldNames()]
+    spark.createDataFrame(predictions, forecast_schema).write.mode("append").saveAsTable(tables["forecasts"])
     return {"status": "advanced", "simulated_time": origin + frequency, "model": model}
