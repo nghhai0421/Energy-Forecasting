@@ -174,7 +174,7 @@ def run_demo(spark, settings, model=None):
     horizon = settings["forecast"]["horizon"]
     dates = pd.date_range(origin + frequency, periods=horizon, freq=frequency)
     future_X = prepare_future_covariates(dates, dataset)
-    result = forecast(model["forecaster"], y, X, future_X)
+    result = forecast(model["forecaster"], y, X, future_X, prediction_interval=True)
 
     # Save Forecasts
     predictions = pd.DataFrame({
@@ -182,7 +182,10 @@ def run_demo(spark, settings, model=None):
         "model_path": settings["model"]["model_path"], "model_revision": model["revision"],
         "forecast_origin": origin, "target_timestamp": dates,
         "horizon_step": np.arange(1, horizon + 1), "prediction": result["prediction"].to_numpy(),
-        "created_at": pd.Timestamp.now(tz="UTC"), "parameters_json": json.dumps(model["parameters"]),
+        "prediction_lower": result["prediction_lower"].to_numpy(),
+        "prediction_upper": result["prediction_upper"].to_numpy(), "interval_coverage": 0.8,
+        "created_at": pd.Timestamp.now(tz="UTC"),
+        "parameters_json": json.dumps({**model["parameters"], "quantile_levels": [0.1, 0.5, 0.9]}),
     })
     spark.createDataFrame(predictions, spark.table(tables["forecasts"]).schema).write.mode("append").saveAsTable(tables["forecasts"])
     return {"status": "advanced", "simulated_time": origin + frequency, "model": model}

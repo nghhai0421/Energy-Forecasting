@@ -2,7 +2,7 @@
 
 import unittest
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pandas as pd
@@ -91,6 +91,43 @@ class FakeForecaster:
 
 class InferenceTests(unittest.TestCase):
     """Check repeated forecasts and fold scoring without model dependencies."""
+
+    def test_prediction_interval_uses_one_native_call(self):
+        """Verify quantile inputs, aligned bounds, and invalid-interval rejection.
+
+        Returns
+        -------
+        None
+            Assertions verify native median/interval extraction without weights.
+        """
+        model = MagicMock()
+        model.seed = 42
+        model.config = {"context_length": 3, "limit_prediction_length": True}
+        y = pd.Series([1., 2., 3.], name="load")
+        X = pd.DataFrame({"weather": [5., 6., 7.], "is_holiday": [0, 0, 0]})
+        dates = pd.date_range("2025-01-01", periods=2, freq="15min", tz="UTC")
+        future = pd.DataFrame({"is_holiday": [1, 1]}, index=dates)
+        values = np.array([[[2., 4., 6.], [1., 5., 9.]]])
+        model.model_pipeline.predict_quantiles.return_value = ([SimpleNamespace(numpy=lambda: values)], [])
+        with patch.dict("sys.modules", {"transformers": SimpleNamespace(set_seed=MagicMock())}):
+            result = forecast(model, y, X, future, prediction_interval=True)
+            np.testing.assert_allclose(result["prediction"], [4., 5.])
+            np.testing.assert_allclose(result["prediction_lower"], [2., 1.])
+            np.testing.assert_allclose(result["prediction_upper"], [6., 9.])
+            for name in ("prediction", "prediction_lower", "prediction_upper"):
+                pd.testing.assert_index_equal(result[name].index, dates)
+            model.model_pipeline.predict_quantiles.assert_called_once()
+            model.predict.assert_not_called()
+            call = model.model_pipeline.predict_quantiles.call_args
+            self.assertEqual(call.kwargs["quantile_levels"], [0.1, 0.5, 0.9])
+            self.assertEqual(call.kwargs["context_length"], 3)
+            inputs = call.args[0][0]
+            np.testing.assert_allclose(inputs["target"], [[1., 2., 3.]])
+            self.assertEqual(list(inputs["future_covariates"]), ["is_holiday"])
+            self.assertIn("weather", inputs["past_covariates"])
+            values[0, 0, 0] = 10.
+            with self.assertRaisesRegex(ValueError, "ordered"):
+                forecast(model, y, X, future, prediction_interval=True)
 
     def test_forecast_replaces_context_and_preserves_future_labels(self):
         """Verify model reuse, context isolation, and timestamp-labelled outputs.

@@ -75,7 +75,7 @@ def load_forecaster(y, X=None, context_length=672, model_path="amazon/chronos-2"
     }
 
 
-def forecast(forecaster, y, X, future_X):
+def forecast(forecaster, y, X, future_X, prediction_interval=False):
     """Forecast one horizon after replacing the forecaster's observed context.
 
     Parameters
@@ -89,11 +89,14 @@ def forecast(forecaster, y, X, future_X):
     future_X : pandas.DataFrame
         Known-future covariates from prepare_future_covariates. Its row count
         defines the horizon; its index labels the returned predictions.
+    prediction_interval : bool, default False
+        Return the native Chronos-2 median and 10th/90th percentile bounds.
 
     Returns
     -------
     dict
         Prediction Series indexed like future_X, fit_seconds, and predict_seconds.
+        Interval mode also includes prediction_lower and prediction_upper Series.
 
     Raises
     ------
@@ -139,9 +142,34 @@ def forecast(forecaster, y, X, future_X):
 
     # Forecast
     started = perf_counter()
-    prediction = forecaster.predict(fh=horizon, X=model_future)
+    if prediction_interval:
+        from transformers import set_seed
+
+        set_seed(forecaster.seed)
+        inputs = {
+            "target": history.to_numpy(dtype=np.float32).reshape(1, -1),
+            "past_covariates": {column: history_X[column].to_numpy() for column in history_X},
+            "future_covariates": {column: model_future[column].to_numpy() for column in model_future},
+        }
+        quantiles, _ = forecaster.model_pipeline.predict_quantiles(
+            [inputs], prediction_length=len(horizon), quantile_levels=[0.1, 0.5, 0.9],
+            context_length=forecaster.config["context_length"],
+            limit_prediction_length=forecaster.config["limit_prediction_length"],
+        )
+        values = quantiles[0].numpy()[0]
+        if values.shape != (len(horizon), 3) or not np.isfinite(values).all():
+            raise ValueError("Model must return finite lower, median, and upper values for each step.")
+        if (values[:, 0] > values[:, 1]).any() or (values[:, 1] > values[:, 2]).any():
+            raise ValueError("Prediction quantiles must be ordered lower <= median <= upper.")
+        prediction = pd.Series(values[:, 1])
+    else:
+        prediction = forecaster.predict(fh=horizon, X=model_future)
     predict_seconds = perf_counter() - started
     if len(prediction) != len(future_X) or not np.isfinite(prediction.to_numpy(dtype=float)).all():
         raise ValueError("Model must return one finite prediction per future row.")
     prediction = pd.Series(prediction.to_numpy().reshape(-1), index=future_X.index, name=y.name)
-    return {"prediction": prediction, "fit_seconds": fit_seconds, "predict_seconds": predict_seconds}
+    result = {"prediction": prediction, "fit_seconds": fit_seconds, "predict_seconds": predict_seconds}
+    if prediction_interval:
+        result["prediction_lower"] = pd.Series(values[:, 0], index=future_X.index, name="prediction_lower")
+        result["prediction_upper"] = pd.Series(values[:, 2], index=future_X.index, name="prediction_upper")
+    return result

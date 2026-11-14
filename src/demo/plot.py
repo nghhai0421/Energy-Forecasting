@@ -56,6 +56,11 @@ def plot_demo(spark, settings):
     figure, axes = plt.subplots(2, 1, figsize=(13, 8), constrained_layout=True)
     axes[0].plot(pd.to_datetime(actuals[timestamp], utc=True).dt.tz_convert(timezone), actuals[target], label="Actual", color="black")
     axes[0].plot(pd.to_datetime(current["target_timestamp"], utc=True).dt.tz_convert(timezone), current["prediction"], label="Latest forecast", color="tab:blue")
+    axes[0].fill_between(
+        pd.to_datetime(current["target_timestamp"], utc=True).dt.tz_convert(timezone),
+        current["prediction_lower"].to_numpy(), current["prediction_upper"].to_numpy(),
+        color="tab:blue", alpha=0.2, label="80% prediction interval",
+    )
     if comparison != latest:
         axes[0].plot(pd.to_datetime(previous["target_timestamp"], utc=True).dt.tz_convert(timezone), previous["prediction"], label="Previously issued forecast", color="tab:orange")
         axes[0].axvline(comparison.tz_convert(timezone), color="tab:orange", linestyle="--", label="Previous forecast origin")

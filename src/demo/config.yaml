@@ -21,6 +21,6 @@ model:
   seed: 42
 
 plot:
-  history_hours: 24
+  history_hours: 3
   future_hours: 3
   timezone: Europe/Berlin
