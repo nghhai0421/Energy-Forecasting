@@ -66,24 +66,35 @@ plt.close(figure)
 # MAGIC %md
 # MAGIC Optional accelerated replay: set `replay_steps` above zero and run this cell.
 # MAGIC Each iteration releases one simulated hour. Charts replace the prior display.
+# MAGIC Each chart is saved as a numbered PNG in a new demo_frames folder in the
+# MAGIC source volume. The files remain available for video creation after the session.
 
 # COMMAND ----------
 
 # Replay Hours
+from datetime import datetime, timezone
 from IPython.display import clear_output
 
 replay_steps = 0
-for step in range(replay_steps):
+recording_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+frame_folder = Path(settings["raw_path"]) / "demo_frames" / recording_id
+if replay_steps > 0:
+    frame_folder.mkdir(parents=True)
+
+for step in range(1, replay_steps + 1):
     result = run_demo(spark, settings, model)
     model = result["model"]
-    clear_output(wait=True)
-    figure, status = plot_demo(spark, settings)
-    print(status)
-    plt.show()
-    plt.close(figure)
     if result["status"] == "exhausted":
         print("Replay source exhausted.")
         break
+    figure, status = plot_demo(spark, settings)
+    frame_path = frame_folder / f"forecast_{step:05d}.png"
+    figure.savefig(frame_path, dpi=150)
+    clear_output(wait=True)
+    print(status)
+    print(f"Saved frame {step}: {frame_path}")
+    plt.show()
+    plt.close(figure)
 
 # COMMAND ----------
 

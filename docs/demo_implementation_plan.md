@@ -98,6 +98,8 @@ plt.show()
 
 Subsequent calls use `run_demo(spark, settings, model=result["model"])`. Use the notebook's reset cell to start over, including after changing model or forecast settings.
 
+The Replay Hours cell saves each completed step's figure before clearing the displayed output. Set `replay_steps` to the desired number of simulated hours. PNGs are written at 150 DPI with fixed figure dimensions to `<raw_path>/demo_frames/<UTC recording ID>/forecast_00001.png`, `forecast_00002.png`, and so on. Each loop execution uses a new folder; an exhausted source creates no duplicate final frame. The volume requires write permission. Frames persist after the Python session and can be downloaded in filename order for video creation. Resetting the demo tables leaves saved frames intact.
+
 The main chart combines recent actuals (black), the latest forecast (blue), and the previous origin's forecast (orange). A dashed orange line marks the previous origin; a dotted grey line marks simulated current time. Both forecasts use the configured future display window. A second chart shows errors by horizon. One-hour-ahead score cards use `horizon_step=4`.
 
 The latest forecast has a light blue band labeled "Prediction interval". The earlier uncertainty update requires a reset if the base forecast table still lacks interval columns. The YAML/dashboard configuration update adds a table and views and does not require a reset of already compatible base tables.
