@@ -19,15 +19,22 @@ def initialize_storage(spark, settings, baseline, reset=False):
     -------
     None
         Tables and views are saved in Unity Catalog.
+
+    Raises
+    ------
+    ValueError
+        If demo tables already exist and reset is false.
     """
     # Save History
     spark.conf.set("spark.sql.session.timeZone", "UTC")
     tables = settings["tables"]
     timestamp = settings["data"]["timestamp_column"]
+    if not reset and any(spark.catalog.tableExists(tables[name]) for name in ("inputs", "forecasts")):
+        raise ValueError("Demo tables already exist. Skip initialization or use reset_demo().")
     (
         spark.createDataFrame(baseline).replace(float("nan"), None).write.format("delta")
         .option("delta.columnMapping.mode", "name").option("overwriteSchema", "true")
-        .mode("overwrite" if reset else "errorifexists").saveAsTable(tables["inputs"])
+        .mode("overwrite").saveAsTable(tables["inputs"])
     )
 
     # Create Forecast Table

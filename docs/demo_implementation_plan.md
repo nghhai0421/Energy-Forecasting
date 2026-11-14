@@ -71,6 +71,8 @@ Use one writer and complete each step before running the next. Writes are plain 
 
 Open `notebooks/energy_demo.py` in the repository's Databricks Git folder. Its setup assumes the notebook working directory is `notebooks/`. Attach compute with volume access, table/view creation permissions, and the dependencies listed in the notebook.
 
+`environment.yml` already lists `holidays` for the local Conda environment. The notebook installs it with `%pip` and restarts Python before importing the demo, since Databricks does not automatically apply that Conda file.
+
 Run setup and initialize once, then repeat the advance cell. Skip initialization when resuming an existing demo. A minimal equivalent is:
 
 ```python

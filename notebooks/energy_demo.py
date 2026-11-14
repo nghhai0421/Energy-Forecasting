@@ -6,7 +6,16 @@
 # MAGIC Required packages: numpy, pandas, PyYAML, matplotlib, holidays, sktime==1.2.0,
 # MAGIC chronos-forecasting>=2.0.0, and a compatible torch build. Spark/Delta come from
 # MAGIC the Databricks runtime. Install missing packages through the compute environment.
+# MAGIC The first cells install holidays for this notebook and restart Python.
 # MAGIC The first model load requires access to the configured pretrained checkpoint.
+
+# COMMAND ----------
+
+# MAGIC %pip install holidays
+
+# COMMAND ----------
+
+dbutils.library.restartPython()
 
 # COMMAND ----------
 
