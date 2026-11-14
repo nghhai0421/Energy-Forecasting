@@ -1,0 +1,26 @@
+experiment_config: configs/experiments/chronos2.yaml
+raw_path: /Volumes/energy_prediction/default/raw_data
+# Extend missing holiday years using the project's Baden-Wuerttemberg calendar.
+holiday_subdivision: BW
+
+tables:
+  inputs: energy_prediction.default.demo_model_inputs
+  forecasts: energy_prediction.default.demo_forecasts
+  actuals: energy_prediction.default.demo_forecast_actuals
+  metrics: energy_prediction.default.demo_metrics
+
+forecast:
+  lookback: 672
+  horizon: 96
+  advance_steps: 4
+
+model:
+  id: chronos2
+  model_path: amazon/chronos-2
+  device_map: cpu
+  seed: 42
+
+plot:
+  history_hours: 24
+  future_hours: 3
+  timezone: Europe/Berlin

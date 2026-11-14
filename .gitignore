@@ -10,3 +10,14 @@ __pycache__/
 /docs/
 AGENTS.md
 /outputs/
+
+# Terraform local files
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+
+# Local variable files (may contain secrets)
+*.tfvars
+*.tfvars.json
