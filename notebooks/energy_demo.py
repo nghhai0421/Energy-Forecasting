@@ -3,15 +3,14 @@
 # MAGIC # Energy forecasting replay
 # MAGIC Open this notebook inside a Databricks Git folder containing the repository.
 # MAGIC Attach Python compute with Unity Catalog volume/table access. Use one writer.
-# MAGIC Required packages: numpy, pandas, PyYAML, matplotlib, holidays, sktime==1.2.0,
-# MAGIC chronos-forecasting>=2.0.0, and a compatible torch build. Spark/Delta come from
-# MAGIC the Databricks runtime. Install missing packages through the compute environment.
-# MAGIC The first cells install holidays for this notebook and restart Python.
+# MAGIC The first cells install requirements.txt and restart Python. The file mirrors
+# MAGIC the packages in environment.yml; Databricks supplies Python, Spark, and Delta.
+# MAGIC Run setup when starting a fresh Python session. Saved tables remain available.
 # MAGIC The first model load requires access to the configured pretrained checkpoint.
 
 # COMMAND ----------
 
-# MAGIC %pip install holidays
+# MAGIC %pip install -r ../requirements.txt
 
 # COMMAND ----------
 

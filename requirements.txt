@@ -1,0 +1,15 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+numpy
+pandas
+openpyxl
+holidays
+scikit-learn
+matplotlib
+optuna
+pyyaml
+tzdata
+sktime==1.2.0
+pmdarima
+chronos-forecasting>=2.0.0
+torch==2.14.1+cpu

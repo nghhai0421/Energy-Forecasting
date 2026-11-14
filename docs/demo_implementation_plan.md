@@ -15,6 +15,7 @@ src/models/chronos2/
   inference.py                         # Existing model loading and prediction
 preprocessing/add_seasonal_features.py  # Existing calendar features
 configs/experiments/chronos2.yaml        # Shared target and covariate specification
+requirements.txt                       # Pip packages mirrored from environment.yml
 notebooks/energy_demo.py                # Databricks controls and visualization
 ```
 
@@ -71,7 +72,7 @@ Use one writer and complete each step before running the next. Writes are plain 
 
 Open `notebooks/energy_demo.py` in the repository's Databricks Git folder. Its setup assumes the notebook working directory is `notebooks/`. Attach compute with volume access, table/view creation permissions, and the dependencies listed in the notebook.
 
-`environment.yml` already lists `holidays` for the local Conda environment. The notebook installs it with `%pip` and restarts Python before importing the demo, since Databricks does not automatically apply that Conda file.
+The notebook runs `%pip install -r ../requirements.txt` and restarts Python before importing the demo. The requirements file mirrors all package dependencies and pip versions/index settings from `environment.yml`. Databricks supplies Python, pip, Spark, and Delta. Keep the two dependency files synchronized when packages change.
 
 Run setup and initialize once, then repeat the advance cell. Skip initialization when resuming an existing demo. A minimal equivalent is:
 
