@@ -33,7 +33,7 @@ Source files remain in `/Volumes/energy_prediction/default/raw_data`. All models
 | Advance per call | One hour: four observations |
 | Lookback | Seven days: 672 observations |
 | Forecast | Next 24 hours: 96 observations |
-| Main chart | Previous three hours of actuals and next three hours of forecasts |
+| Detailed chart | Previous six hours of actuals and next three hours of forecasts |
 
 The historical baseline uses the existing causal prior-mean imputation. Original targets are preserved in `observed_target` for scoring. Incoming batches use strict validation.
 
@@ -100,7 +100,7 @@ Subsequent calls use `run_demo(spark, settings, model=result["model"])`. Use the
 
 The Replay Hours cell saves each completed step's figure before clearing the displayed output. Set `replay_steps` to the desired number of simulated hours. PNGs are written at 150 DPI with fixed figure dimensions to `<raw_path>/demo_frames/<UTC recording ID>/forecast_00001.png`, `forecast_00002.png`, and so on. Each loop execution uses a new folder; an exhausted source creates no duplicate final frame. The volume requires write permission. Frames persist after the Python session and can be downloaded in filename order for video creation. Resetting the demo tables leaves saved frames intact.
 
-The main chart combines recent actuals (black), the latest forecast (blue), and the previous origin's forecast (orange). A dashed orange line marks the previous origin; a dotted grey line marks simulated current time. Both forecasts use the configured future display window. A second chart shows errors by horizon. One-hour-ahead score cards use `horizon_step=4`.
+The notebook figure uses a 2x2 grid: 20 times the configured history at top left, 5 times at top right, the configured history at bottom left, and horizon errors at bottom right. With `history_hours: 6`, the three history windows are 120, 30 and 6 hours. All three forecast panels use the same configured future window, actuals (black), latest forecast (blue), previous forecast (orange), and prediction band. A dashed orange line marks the previous origin; a dotted grey line marks simulated current time. One-hour-ahead score cards use `horizon_step=4`. Saved PNGs contain the complete grid at 16x12 inches and 150 DPI. These display windows do not change the model's input context.
 
 The latest forecast has a light blue band labeled "Prediction interval". The earlier uncertainty update requires a reset if the base forecast table still lacks interval columns. The YAML/dashboard configuration update adds a table and views and does not require a reset of already compatible base tables.
 

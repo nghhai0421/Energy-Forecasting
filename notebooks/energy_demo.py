@@ -75,7 +75,7 @@ plt.close(figure)
 from datetime import datetime, timezone
 from IPython.display import clear_output
 
-replay_steps = 0
+replay_steps = 168  # Seven simulated days, advancing one hour per step.
 recording_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
 frame_folder = Path(settings["raw_path"]) / "demo_frames" / recording_id
 if replay_steps > 0:
