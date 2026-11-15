@@ -1,6 +1,7 @@
 """ARIMA: load data, optionally tune order, evaluate, and save results."""
 
 import json
+import locale
 from pathlib import Path
 from time import perf_counter
 
@@ -88,8 +89,14 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
     timing = {}
 
     # Load Data
-    raw = pd.read_csv(dataset["path"], sep=";", decimal=",", thousands=".")
-    dates = pd.to_datetime(raw[dataset["timestamp_column"]], format="%d.%m.%Y %H:%M")
+    locale.setlocale(locale.LC_TIME, "C")
+    raw = pd.read_csv(dataset["path"])
+    if dataset["timestamp_column"] not in raw.columns:
+        raw = pd.read_csv(dataset["path"], sep=";", decimal=",", thousands=".")
+    ts_col = raw[dataset["timestamp_column"]]
+    dates = pd.to_datetime(ts_col, format="%b %d, %Y %I:%M %p", errors="coerce")
+    if dates.isna().all():
+        dates = pd.to_datetime(ts_col, format="%d.%m.%Y %H:%M")
     # SMARD uses Berlin time; infer repeated autumn hours in file order.
     dates = dates.dt.tz_localize("Europe/Berlin", ambiguous="infer").dt.tz_convert("UTC")
     values = pd.to_numeric(raw[dataset["target_column"]]).to_numpy(dtype=float)
