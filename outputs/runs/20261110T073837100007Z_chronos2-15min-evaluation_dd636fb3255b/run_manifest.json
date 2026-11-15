@@ -11,7 +11,7 @@
   },
   "sktime_version": "1.2.0",
   "config_files": {
-    "experiment": "C:\\Users\\LENOVO\\Documents\\Personal\\Study\\Master\\Mannheim University\\HWS 2026\\AI Deployment and Operation\\configs\\experiments\\chronos2.yaml",
+    "experiment": "configs/experiments/chronos2.yaml",
     "model": null
   },
   "inference_mode": "zero_shot",
@@ -19,8 +19,8 @@
   "data": {
     "sources": {
       "consumption": {
-        "development": "C:\\Users\\LENOVO\\Documents\\Personal\\Study\\Master\\Mannheim University\\HWS 2026\\AI Deployment and Operation\\Dataset\\raw\\csv\\Actual_consumption_2023_2024_Quarterhour.csv",
-        "demo": "C:\\Users\\LENOVO\\Documents\\Personal\\Study\\Master\\Mannheim University\\HWS 2026\\AI Deployment and Operation\\Dataset\\raw\\csv\\Actual_consumption_2025_Quarterhour.csv",
+        "development": "Dataset/raw/csv/Actual_consumption_2023_2024_Quarterhour.csv",
+        "demo": "Dataset/raw/csv/Actual_consumption_2025_Quarterhour.csv",
         "timestamp_column": "Start date",
         "timezone": "Europe/Berlin",
         "columns": [
@@ -30,8 +30,8 @@
         ]
       },
       "weather": {
-        "development": "C:\\Users\\LENOVO\\Documents\\Personal\\Study\\Master\\Mannheim University\\HWS 2026\\AI Deployment and Operation\\Dataset\\raw\\csv\\open-meteo-48.83N9.15E293m_2023_2024.csv",
-        "demo": "C:\\Users\\LENOVO\\Documents\\Personal\\Study\\Master\\Mannheim University\\HWS 2026\\AI Deployment and Operation\\Dataset\\raw\\csv\\open-meteo-48.83N9.15E293m_2025.csv",
+        "development": "Dataset/raw/csv/open-meteo-48.83N9.15E293m_2023_2024.csv",
+        "demo": "Dataset/raw/csv/open-meteo-48.83N9.15E293m_2025.csv",
         "timestamp_column": "time",
         "timezone": "+02:00",
         "columns": [
@@ -41,7 +41,7 @@
         ]
       },
       "holidays": {
-        "path": "C:\\Users\\LENOVO\\Documents\\Personal\\Study\\Master\\Mannheim University\\HWS 2026\\AI Deployment and Operation\\Dataset\\raw\\csv\\df_holiday.csv",
+        "path": "Dataset/raw/csv/df_holiday.csv",
         "date_column": "Datum",
         "timezone": "Europe/Berlin"
       }

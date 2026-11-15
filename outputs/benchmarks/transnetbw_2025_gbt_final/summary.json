@@ -1,0 +1,52 @@
+{
+  "evaluated_at_utc": "2026-11-14T17:49:06.129022+00:00",
+  "metrics": {
+    "GBT": {
+      "intervals": 32064,
+      "mae_mwh": 58.36060991885503,
+      "rmse_mwh": 79.07552894277006,
+      "bias_actual_minus_forecast_mwh": -7.945597069938925,
+      "underprediction_mwh": 808253.4859938232,
+      "overprediction_mwh": 1063021.1104443446,
+      "absolute_error_mwh": 1871274.5964381678,
+      "overprediction_fraction": 0.5536115269461078
+    },
+    "Published TransnetBW forecast": {
+      "intervals": 32064,
+      "mae_mwh": 113.55411458333333,
+      "rmse_mwh": 135.39793064717534,
+      "bias_actual_minus_forecast_mwh": -102.0134190993014,
+      "underprediction_mwh": 185020.43,
+      "overprediction_mwh": 3455978.7,
+      "absolute_error_mwh": 3640999.13,
+      "overprediction_fraction": 0.8970184630738522
+    }
+  },
+  "source_prediction_rows": 32064,
+  "scored_rows": 32064,
+  "excluded_missing_rows": 0,
+  "start_utc": "2024-12-31T23:00:00+00:00",
+  "last_interval_start_utc": "2025-11-30T22:45:00+00:00",
+  "gbt_mae_change_vs_published_percent": -48.605464334780876,
+  "gbt_rmse_change_vs_published_percent": -41.59768279706738,
+  "gbt_lower_absolute_error_fraction": 0.782435129740519,
+  "downloaded_actuals_match_saved_labels": true,
+  "inputs": {
+    "predictions": {
+      "path": "outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/predictions/final_test.csv",
+      "sha256": "d34448ba14feb22da9df7204b2f0f97f07b2af7464112c735d83537eff030b9c"
+    },
+    "actual": {
+      "path": "Dataset/benchmarks/transnetbw/actual_consumption.csv",
+      "sha256": "5202dda1bd26ef8f9aaf892130b5e0c7a6ce2aec71213b62446b963d67bf5093"
+    },
+    "forecast": {
+      "path": "Dataset/benchmarks/transnetbw/forecasted_consumption.csv",
+      "sha256": "7fae95fc04ec223117fc06b0f4cddba0e133914c2d753985e592d46a636fb88f"
+    }
+  },
+  "comparison_status": "retrospective delivery-time match; issue times and forecast revisions not matched",
+  "observation_delay_minutes": 60,
+  "source_value_column": "grid load [MWh] Original resolutions",
+  "region_provenance": "TransnetBW selection supplied with these exports; region is not embedded in CSV headers"
+}

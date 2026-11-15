@@ -13,6 +13,9 @@ dependencies:
   - optuna
   - pyyaml
   - tzdata
+  - nbformat
+  - nbclient
+  - ipykernel
   - pip
   - pip:
       - --extra-index-url=https://download.pytorch.org/whl/cpu

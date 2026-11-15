@@ -11,6 +11,10 @@ __pycache__/
 AGENTS.md
 /outputs/
 
+# Local rendered previews; the Markdown report and comparison PNG are versioned.
+/reports/*.html
+/reports/*_files/
+
 # Terraform local files
 **/.terraform/*
 *.tfstate

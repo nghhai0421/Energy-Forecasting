@@ -1,0 +1,162 @@
+{
+  "contract": {
+    "feature_version": "split_gbt_lags_calendar_v1",
+    "feature_columns": [
+      "load_lag_24h_delay_60m",
+      "load_lag_168h_delay_60m",
+      "temperature_lag_24h_delay_60m",
+      "temperature_lag_168h_delay_60m",
+      "wind_lag_24h_delay_60m",
+      "wind_lag_168h_delay_60m",
+      "dew_point_lag_24h_delay_60m",
+      "dew_point_lag_168h_delay_60m",
+      "price_lag_24h_delay_60m",
+      "price_lag_168h_delay_60m",
+      "calendar_second_of_minute_sin",
+      "calendar_second_of_minute_cos",
+      "calendar_minute_of_hour_sin",
+      "calendar_minute_of_hour_cos",
+      "calendar_hour_of_day_sin",
+      "calendar_hour_of_day_cos",
+      "calendar_day_of_week_sin",
+      "calendar_day_of_week_cos",
+      "calendar_day_of_month_sin",
+      "calendar_day_of_month_cos",
+      "calendar_day_of_year_sin",
+      "calendar_day_of_year_cos",
+      "calendar_week_of_year_sin",
+      "calendar_week_of_year_cos",
+      "calendar_month_of_year_sin",
+      "calendar_month_of_year_cos",
+      "calendar_year",
+      "is_holiday"
+    ],
+    "development_hashes": {
+      "consumption": "979e64d9d27f037766c69b67bf24a78a1167e697a98ea4dbb22d07dce1a50cd8",
+      "weather": "c814a1a7a4a9c5d1dfb82a5a64b4beb86c49c00fa08a296e36eb16e00d686dc2",
+      "prices": "32518d06bdae26d523a924a551d452e13b3eee2f5280ca1056c2d2fb601c91d3",
+      "holidays": "4b9097a2303050ae4ce77510c2f02b8d42a11dc784e93a77511ef4bdd9197e5f"
+    },
+    "holiday_dates": [
+      "2023-01-01",
+      "2023-01-06",
+      "2023-04-07",
+      "2023-04-10",
+      "2023-05-01",
+      "2023-05-18",
+      "2023-05-29",
+      "2023-06-08",
+      "2023-10-03",
+      "2023-11-01",
+      "2023-12-25",
+      "2023-12-26",
+      "2024-01-01",
+      "2024-01-06",
+      "2024-03-29",
+      "2024-04-01",
+      "2024-05-01",
+      "2024-05-09",
+      "2024-05-20",
+      "2024-05-30",
+      "2024-10-03",
+      "2024-11-01",
+      "2024-12-25",
+      "2024-12-26",
+      "2025-01-01",
+      "2025-01-06",
+      "2025-04-18",
+      "2025-04-21",
+      "2025-05-01",
+      "2025-05-29",
+      "2025-06-09",
+      "2025-06-19",
+      "2025-10-03",
+      "2025-11-01",
+      "2025-12-25",
+      "2025-12-26"
+    ],
+    "calendar_policy": "team CSV; missing years generated with holidays.Germany(subdiv='BW')",
+    "data": {
+      "pipeline": "split_15min",
+      "timestamp_column": "timestamp_utc",
+      "target_column": "grid load [MWh]",
+      "frequency": "15min",
+      "lag_hours": [
+        24,
+        168
+      ],
+      "observation_delay_minutes": 60,
+      "lag_fields": {
+        "load": "grid load [MWh]",
+        "temperature": "temperature_2m (\u00b0C)",
+        "wind": "wind_speed_10m (km/h)",
+        "dew_point": "dew_point_2m (\u00b0C)",
+        "price": "Germany/Luxembourg [\u20ac/MWh]"
+      }
+    },
+    "source_settings": {
+      "consumption": {
+        "timestamp_column": "Start date",
+        "timezone": "Europe/Berlin",
+        "columns": [
+          "grid load [MWh]"
+        ]
+      },
+      "weather": {
+        "timestamp_column": "time",
+        "timezone": "+02:00",
+        "columns": [
+          "temperature_2m (\u00b0C)",
+          "wind_speed_10m (km/h)",
+          "dew_point_2m (\u00b0C)"
+        ]
+      },
+      "prices": {
+        "timestamp_column": "Start date",
+        "timezone": "Europe/Berlin",
+        "columns": [
+          "Germany/Luxembourg [\u20ac/MWh]"
+        ]
+      },
+      "holidays": {
+        "date_column": "Datum",
+        "timezone": "Europe/Berlin"
+      }
+    },
+    "split": {
+      "train_start": "2023-01-01T00:00:00+01:00",
+      "test_start": "2025-01-01T00:00:00+01:00",
+      "test_end": "2026-01-01T00:00:00+01:00",
+      "validation_starts": [
+        "2024-04-01T00:00:00+02:00",
+        "2024-07-01T00:00:00+02:00",
+        "2024-10-01T00:00:00+02:00"
+      ]
+    },
+    "forecast": {
+      "lookback": 676,
+      "horizon": 96,
+      "step_length": 96
+    }
+  },
+  "selection": {
+    "parameters": {
+      "learning_rate": 0.05337193482375701,
+      "max_iter": 100,
+      "max_depth": 8,
+      "max_leaf_nodes": 59,
+      "min_samples_leaf": 64,
+      "l2_regularization": 0.01574118047380971,
+      "random_state": 42
+    },
+    "source": "hpo",
+    "trial": 11,
+    "validation_score": 72.71880283576692,
+    "metric": "mean_fold_rmse",
+    "direction": "minimize",
+    "experiment_signature": "3f3f0b6a6cad02b341374c672e663cbe6b459d2a708b3ef70d5afd0d03866234"
+  },
+  "training_rows": 69500,
+  "training_cutoff": "2024-12-31T22:45:00+00:00",
+  "fit_seconds": 1.1582256999099627
+}

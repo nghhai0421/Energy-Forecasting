@@ -1,0 +1,4 @@
+# Keep large data and saved run artifacts collapsed in GitHub code review.
+Dataset/benchmarks/** linguist-vendored=true
+Dataset/processed/** linguist-generated=true
+outputs/** linguist-generated=true

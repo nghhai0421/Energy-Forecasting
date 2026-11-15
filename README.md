@@ -11,7 +11,7 @@ workflow.
 Implemented Models:
 - ARIMA
 - Chronos-2 (pretrained, zero-shot)
-- Gradient Boosting (HistGradientBoostingRegressor through sktime direct reduction)
+- Gradient Boosting (HistGradientBoostingRegressor through sktime YfromX)
 
 Under Development: Build a production-style forecasting demo using Azure Databricks and Azure Data Lake, replaying historical data to simulate incoming observations and trigger preprocessing, inference, and forecast storage.
 
@@ -29,7 +29,7 @@ Without Conda, use Python 3.11:
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install numpy pandas scikit-learn matplotlib optuna pyyaml tzdata pmdarima sktime==1.2.0
+python -m pip install numpy pandas scikit-learn matplotlib optuna pyyaml tzdata holidays nbformat nbclient ipykernel pmdarima sktime==1.2.0
 python -m pip install torch==2.14.1+cpu --index-url https://download.pytorch.org/whl/cpu
 ```
 
@@ -41,6 +41,10 @@ Run from the repository root with the environment active. The examples use
 ARIMA. For Ridge, replace the experiment path with
 `configs/experiments/ridge_prototype.yaml` and the model path with
 `configs/models/ridge_regression.yaml`.
+
+Commands and configuration paths are relative to the repository root. Markdown
+links are relative to their document. Use `python` from the activated environment
+on Windows, Linux or macOS; no personal checkout path is required.
 
 Fit and evaluate with defaults (no HPO):
 
@@ -70,47 +74,45 @@ Reuse saved HPO parameters without tuning again (replace `RUN_ID`):
 python main.py --stage evaluate --exp-cfg configs/experiments/ARIMA.yaml --hpo-run outputs/hpo_runs/RUN_ID
 ```
 
-HPO requires a model YAML with search settings. `--hpo-run` loads the best
+ARIMA/Ridge HPO requires a model YAML with search settings; GBT keeps these in its experiment YAML. `--hpo-run` loads the best
 hyperparameters from a saved HPO run. Use `--run-name` to set the run name.
 
 
-## Regional gradient boosting experiment
+## Gradient boosting
 
-Run the supplied 2023 hourly regional dataset directly, with calendar features
-and weather observed 24 hours earlier. The model loader does not aggregate again:
+Use one configuration, [configs/experiments/gradient_boosting.yaml](configs/experiments/gradient_boosting.yaml), for the final experiment. It contains source files, splits, the selected model parameters and the HPO search space.
 
 ```powershell
 $env:OMP_NUM_THREADS = "1"
-python main.py --stage evaluate --exp-cfg configs/experiments/gradient_boosting.yaml --mdl-cfg configs/models/gradient_boosting.yaml
+$env:OPENBLAS_NUM_THREADS = "1"
+$env:MKL_NUM_THREADS = "1"
+python main.py --stage evaluate --exp-cfg configs/experiments/gradient_boosting.yaml
 ```
 
-This runner uses the same `evaluate`, `hpo`, `all`, and `--hpo-run` conventions
-as Ridge. The model YAML tunes learning rate; defaults are also in the runner.
-For the configured five-trial learning-rate search followed by evaluation, use
-`--stage all` with the same config paths. Other model parameters remain fixed.
-The result formatter belongs to the gradient boosting runner itself.
-It needs the existing numpy/pandas/scikit-learn/sktime/Optuna/plotting dependencies,
-without requiring torch or pmdarima. Automatic random early-stopping splits are
-disabled; model selection uses chronological development folds only.
+Evaluation uses the selected parameters. Use `--stage hpo` for development-only
+search, `--stage all` for search followed by evaluation, or add `--hpo-run <directory>`
+to evaluation to reuse a compatible saved search. Omit `--mdl-cfg`.
 
-The experiment predicts the next 24 elapsed hours, refitting every 24 hours. It
-does not yet implement an auction-timed delivery-day forecast or procurement
-cost simulation. Historical weather is lagged, not treated as an archived weather
-forecast. Prices are excluded because availability at auction time is not established.
-Set `historical_weather: []` in a copied experiment YAML for a calendar-only
-comparison; the same 24-hour warm-up is retained so fold boundaries match.
-The input is `Dataset/preprocessed/preprocessed_dataset_1y_hourly.csv`;
-the loader rejects missing, duplicate, unsorted, or non-hourly timestamps and
-non-finite selected values. Calendar features use Europe/Berlin time, while rows
-are spaced in UTC. Lagged weather assumes no reporting delay.
-See `preprocessing/README.md` for the upstream hourly aggregation policies.
+Like Chronos-2, the model has three modules: `run.py` orchestrates the experiment,
+`process.py` prepares data, and `inference.py` loads a model and forecasts.
+GBT is trained on separate 2023-2024 files and replays January-November 2025 with
+fixed weights. Its 28 features use historical load, temperature, wind, dew point
+and price at effective 25h/169h lags, shared calendar encodings and BW holidays.
+Each origin predicts 96 quarter-hours. The target is grid load in MWh per interval;
+Chronos-2's residual-load target and evaluation split differ.
 
-Validate preparation with `python -m unittest discover -s tests`.
+Read the [final setup and TransnetBW comparison](reports/transnetbw_2025_final_comparison.md)
+for preprocessing, all features, HPO, saved artifacts and reproduction commands.
+The [demo notebook](preprocessing/gbt_final_demo.ipynb) demonstrates frozen inference.
+The only GBT plot is the TransnetBW comparison figure;
+GBT training/HPO do not generate extra plots.
 
 ## Outputs
 
 Each run gets a unique folder under `outputs/hpo_runs/` or `outputs/runs/`.
-The parent folder is set by `output_root` in the experiment YAML.
+The parent folder is set by `output_root` in the experiment YAML. The reviewed final
+GBT snapshots are versioned so the demo notebook and report links work on a fresh
+checkout. Newly generated run directories remain ignored by Git.
 
 Saved files:
 
@@ -131,7 +133,7 @@ total evaluation includes fitting, prediction, scoring, and overhead. For Chrono
 fit means context setup, not weight training. Hardware records the device, CPU
 model, and logical core count. These details also appear in the shell summary.
 
-Graphs in `plots/`:
+ARIMA/Ridge/Chronos graphs in `plots/` (GBT retains only the separate TransnetBW comparison plot):
 
 - `forecast_example_1.png` to `forecast_example_3.png`: up to three test forecasts
   against actuals, with recent history and the train/test boundary.
@@ -140,8 +142,8 @@ Graphs in `plots/`:
 - `final_test_residuals_over_time.png`: one-step forecast residuals over time.
 - `optuna_validation_history.png`: trial scores and best score so far (with HPO).
 
-HPO-only runs save the manifest, artifacts, and tuning graph. Evaluation runs
-save predictions, metrics, and forecast graphs too. Chronos-2 records the
+HPO-only runs save the manifest and artifacts. Evaluation runs save predictions
+and metrics. Other model runners can also generate the graphs listed above. Chronos-2 records the
 pretrained model ID, resolved revision when available, and inference settings
 instead of saving another weights checkpoint.
 
@@ -149,8 +151,8 @@ instead of saving another weights checkpoint.
 
 1. Keep the experiment in `src/models/<model_name>/run.py`. Expose
    `run_experiment(exp_cfg, mdl_cfg=None, run_name=None, stage="evaluate", hpo_run=None)`.
-2. Define model defaults inside the runner function. A model YAML supplies
-   optional evaluation overrides and is required when starting HPO.
+2. Keep configuration in the experiment YAML where practical, following Chronos-2
+   and GBT. ARIMA/Ridge also support separate model overrides.
 3. Add a dispatch branch in `main.py` and any required dependencies.
 4. Use the existing runners as examples for standardized results and call
    `save_run_outputs()`.

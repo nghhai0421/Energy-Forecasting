@@ -39,4 +39,36 @@ featured = add_seasonal_features(df, "timestamp_utc", input_timezone="UTC")
 - CSV conversion preserves values and timestamps, uses commas and UTF-8 with BOM, and skips existing files. Remove a generated CSV explicitly to refresh it. Missing inputs, unexpected sheet/header layouts, and formulas raise errors. Existing `energy_daily.csv` and `energy_hourly.csv` use semicolons.
 - Local timestamps use Berlin time for SMARD and fixed UTC+2 for Open-Meteo. Normalize sources before combining; match holidays by Berlin calendar date.
 
-See the [dataset overview](../Dataset/README.md) and [data inspection notes](../docs/data_inspection.md).
+See the [dataset overview](../Dataset/README.md).
+
+## Final split-file GBT preparation
+
+The final experiment uses `src/models/gradient_boosting/process.py`, independently
+of the other model runners. It follows Chronos-2's source timezone conventions
+and causal filling policy and calls the shared `add_seasonal_features()` routine.
+Development loading opens only the 2023–2024 consumption, weather and price files.
+Demo loading is a separate call made after final model weights have been saved.
+Missing original target labels remain missing for training/scoring, even when
+historical inputs are filled from strictly preceding valid observations.
+
+The shared holiday CSV contains only 2023–2024; the GBT loader generates absent
+calendar years with `holidays.Germany(subdiv="BW")`. These dates are known future
+calendar inputs and are bundled with the checkpoint. Raw files are preserved.
+
+Two lags each for load, temperature, wind, dew point and price use effective offsets
+of 25 and 169 hours (nominal 24/168 hours plus the configured one-hour availability
+buffer). The 17 shared calendar encodings and holiday flag bring the input count
+to 28. `Dataset/processed/gbt_final_development.csv` contains 69,500 usable training
+rows after the 676-row warm-up. `preprocessing/gbt_final_demo.ipynb` demonstrates
+the same preparation and frozen inference functions used by the final evaluation.
+
+Incoming demo history must be a continuous, UTC-indexed, prepared quarter-hour
+table containing the configured lag fields. Keep at least 676 rows ending just
+before the forecast origin. `forecast()` discards any rows at/after the origin;
+future labels, weather and prices cannot become features. Calendar inputs are
+generated from delivery timestamps. Missing raw observations require the same
+causal preprocessing policy and state as development; do not backfill from future
+rows. The buffer does not verify historical weather publication vintages.
+
+
+See the [final GBT setup and comparison](../reports/transnetbw_2025_final_comparison.md) for the full feature list and training commands.

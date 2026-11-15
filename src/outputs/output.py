@@ -13,6 +13,7 @@ from uuid import uuid4
 import pandas as pd
 
 from src.evaluation.metrics import summarize_predictions
+from src.config import portable_paths
 
 
 def save_run_outputs(results, output_root="outputs", run_name=None,
@@ -78,11 +79,11 @@ def save_run_outputs(results, output_root="outputs", run_name=None,
     manifest_path = run_path / "run_manifest.json"
     manifest_path.write_text(json.dumps(manifest, **json_options) + "\n", encoding="utf-8")
     temporary = manifest_path.with_suffix(".tmp")
-    print(f"Run directory: {run_path}", flush=True)
+    print(f"Run directory: {portable_paths(run_path)}", flush=True)
 
     # Save Results
     try:
-        manifest.update(metadata or {})
+        manifest.update(portable_paths(metadata or {}))
 
         # Record Hardware
         cpu_model = platform.processor() or "unknown"

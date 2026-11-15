@@ -1,0 +1,74 @@
+{
+  "run_name": "gradient_boosting_final_grid_load_15min",
+  "model": "gradient_boosting",
+  "data": {
+    "pipeline": "split_15min",
+    "sources": {
+      "consumption": {
+        "development": "Dataset/raw/csv/Actual_consumption_2023_2024_Quarterhour.csv",
+        "demo": "Dataset/raw/csv/Actual_consumption_2025_Quarterhour.csv",
+        "timestamp_column": "Start date",
+        "timezone": "Europe/Berlin",
+        "columns": [
+          "grid load [MWh]"
+        ]
+      },
+      "weather": {
+        "development": "Dataset/raw/csv/open-meteo-48.83N9.15E293m_2023_2024.csv",
+        "demo": "Dataset/raw/csv/open-meteo-48.83N9.15E293m_2025.csv",
+        "timestamp_column": "time",
+        "timezone": "+02:00",
+        "columns": [
+          "temperature_2m (°C)",
+          "wind_speed_10m (km/h)",
+          "dew_point_2m (°C)"
+        ]
+      },
+      "prices": {
+        "development": "Dataset/raw/csv/Day-ahead_prices_2023_2024_Quarterhour.csv",
+        "demo": "Dataset/raw/csv/Day-ahead_prices_2025_Quarterhour.csv",
+        "timestamp_column": "Start date",
+        "timezone": "Europe/Berlin",
+        "columns": [
+          "Germany/Luxembourg [€/MWh]"
+        ]
+      },
+      "holidays": {
+        "path": "Dataset/raw/csv/df_holiday.csv",
+        "date_column": "Datum",
+        "timezone": "Europe/Berlin"
+      }
+    },
+    "timestamp_column": "timestamp_utc",
+    "target_column": "grid load [MWh]",
+    "frequency": "15min",
+    "lag_hours": [
+      24,
+      168
+    ],
+    "observation_delay_minutes": 60,
+    "lag_fields": {
+      "load": "grid load [MWh]",
+      "temperature": "temperature_2m (°C)",
+      "wind": "wind_speed_10m (km/h)",
+      "dew_point": "dew_point_2m (°C)",
+      "price": "Germany/Luxembourg [€/MWh]"
+    }
+  },
+  "forecast": {
+    "lookback": 676,
+    "horizon": 96,
+    "step_length": 96
+  },
+  "split": {
+    "train_start": "2023-01-01T00:00:00+01:00",
+    "test_start": "2025-01-01T00:00:00+01:00",
+    "test_end": "2026-01-01T00:00:00+01:00",
+    "validation_starts": [
+      "2024-04-01T00:00:00+02:00",
+      "2024-07-01T00:00:00+02:00",
+      "2024-10-01T00:00:00+02:00"
+    ]
+  },
+  "output_root": "outputs"
+}

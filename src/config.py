@@ -7,6 +7,26 @@ import yaml
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
+def portable_paths(value):
+    """Store repository paths relative to the checkout, with forward slashes.
+
+    Apply to exported metadata, not live I/O configuration. External paths and
+    non-path values are preserved; shared inputs should live in the repository.
+    """
+    if isinstance(value, dict):
+        return {key: portable_paths(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [portable_paths(item) for item in value]
+    if isinstance(value, Path):
+        value = str(value)
+    if isinstance(value, str) and Path(value).is_absolute():
+        try:
+            return Path(value).relative_to(PROJECT_ROOT).as_posix()
+        except ValueError:
+            pass
+    return value
+
+
 def load_run_settings(exp_cfg, mdl_cfg=None):
     """Load experiment settings and optional model overrides.
 
@@ -53,10 +73,11 @@ def load_run_settings(exp_cfg, mdl_cfg=None):
 
     # Check Settings
     split = experiment["split"]
-    if not 0 < split["test_fraction"] < 1:
-        raise ValueError("test_fraction must be between 0 and 1.")
-    if not 0 < split["train_window_fraction"] < 1:
-        raise ValueError("train_window_fraction must be between 0 and 1.")
+    if "test_start" not in split:
+        if not 0 < split["test_fraction"] < 1:
+            raise ValueError("test_fraction must be between 0 and 1.")
+        if not 0 < split["train_window_fraction"] < 1:
+            raise ValueError("train_window_fraction must be between 0 and 1.")
     if min(experiment["forecast"].values()) < 1:
         raise ValueError("Lookback, horizon and step_length must be positive.")
     return experiment, settings

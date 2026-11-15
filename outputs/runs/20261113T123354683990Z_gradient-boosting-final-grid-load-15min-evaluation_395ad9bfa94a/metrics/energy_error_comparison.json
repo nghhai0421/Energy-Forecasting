@@ -1,0 +1,20 @@
+{
+  "gradient_boosting": {
+    "mae_mwh": 58.36060991885504,
+    "rmse_mwh": 79.07552894277006,
+    "deficit_mwh": 808253.4859938232,
+    "surplus_mwh": 1063021.1104443446,
+    "net_deficit_mwh": -254767.62445052154,
+    "absolute_error_mwh": 1871274.596438168,
+    "intervals": 32064
+  },
+  "weekly_baseline": {
+    "mae_mwh": 110.2588628992016,
+    "rmse_mwh": 170.36907225335915,
+    "deficit_mwh": 1927417.8399999999,
+    "surplus_mwh": 1607922.3399999999,
+    "net_deficit_mwh": 319495.5,
+    "absolute_error_mwh": 3535340.18,
+    "intervals": 32064
+  }
+}

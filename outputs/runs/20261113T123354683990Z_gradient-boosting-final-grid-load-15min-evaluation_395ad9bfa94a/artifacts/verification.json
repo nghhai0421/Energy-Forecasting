@@ -1,0 +1,58 @@
+{
+  "upstream_commit": "541712f3417e21011bc51ae3b95805c96c49f81c",
+  "versions": {
+    "python": "3.11.6",
+    "pandas": "3.0.6",
+    "numpy": "2.4.6",
+    "scikit-learn": "1.9.1",
+    "sktime": "1.2.0",
+    "holidays": "0.108"
+  },
+  "sources": {
+    "consumption_development": {
+      "path": "Dataset\\raw\\csv\\Actual_consumption_2023_2024_Quarterhour.csv",
+      "sha256": "979e64d9d27f037766c69b67bf24a78a1167e697a98ea4dbb22d07dce1a50cd8"
+    },
+    "consumption_demo": {
+      "path": "Dataset\\raw\\csv\\Actual_consumption_2025_Quarterhour.csv",
+      "sha256": "d88addd6d541363d43c79c36865c8fc0de9e9b9bffeb352ac144964f75bcaa4e"
+    },
+    "weather_development": {
+      "path": "Dataset\\raw\\csv\\open-meteo-48.83N9.15E293m_2023_2024.csv",
+      "sha256": "c814a1a7a4a9c5d1dfb82a5a64b4beb86c49c00fa08a296e36eb16e00d686dc2"
+    },
+    "weather_demo": {
+      "path": "Dataset\\raw\\csv\\open-meteo-48.83N9.15E293m_2025.csv",
+      "sha256": "a197b7831ba41eb559b847ae6c22f49a35f39ef642c68b66058ec0e2b1d325b5"
+    },
+    "prices_development": {
+      "path": "Dataset\\raw\\csv\\Day-ahead_prices_2023_2024_Quarterhour.csv",
+      "sha256": "32518d06bdae26d523a924a551d452e13b3eee2f5280ca1056c2d2fb601c91d3"
+    },
+    "prices_demo": {
+      "path": "Dataset\\raw\\csv\\Day-ahead_prices_2025_Quarterhour.csv",
+      "sha256": "3a7acedae06b1743f6867a0d5b7e0467c4176bf972fbe32f3d754228a9500b1e"
+    },
+    "holidays_path": {
+      "path": "Dataset\\raw\\csv\\df_holiday.csv",
+      "sha256": "4b9097a2303050ae4ce77510c2f02b8d42a11dc784e93a77511ef4bdd9197e5f"
+    }
+  },
+  "unit_tests_passed": 31,
+  "demo_notebook_executed": true,
+  "checks": {
+    "source_actuals_match": true,
+    "all_334_origins_have_96_unique_intervals": true,
+    "checkpoint_copied_without_modification": true,
+    "first_forecast_reproduces_from_2024_history_only": true,
+    "learned_weights_unchanged": true
+  },
+  "model_sha256": "25d1ab044486fa0161ba55b49c97df1f449733edb032b04eabbc9399a257d1af",
+  "checkpoint_portability": {
+    "packaged_on": "2026-11-15",
+    "original_model_sha256": "bae623cafd98e9f0bfd9b8fe1570db8ebffc57957a3296340192d8e23dc6d71f",
+    "normalized_field": "dataset source paths",
+    "learned_weights_unchanged": true,
+    "learned_estimator_hash": "e372cf071d514e6ecd570601bedfa360"
+  }
+}
