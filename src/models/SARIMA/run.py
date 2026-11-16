@@ -77,8 +77,9 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
     parameters = {
         "order": tuple(settings.get("order", (1, 1, 1))),
         "seasonal_order": tuple(settings.get("seasonal_order", (1, 0, 1, 4))),
-        "enforce_stationarity": settings.get("enforce_stationarity", False),
-        "enforce_invertibility": settings.get("enforce_invertibility", False),
+        "with_intercept": settings.get("with_intercept", False),
+        "enforce_stationarity": settings.get("enforce_stationarity", True),
+        "enforce_invertibility": settings.get("enforce_invertibility", True),
         "suppress_warnings": settings.get("suppress_warnings", True),
     }
     selection = {
@@ -154,7 +155,7 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
             scoring=rmse, strategy="refit", refit=False,
             n_evals=hpo_settings["n_trials"],
             sampler=optuna.samplers.TPESampler(seed=hpo_settings["seed"]),
-            backend="threading", error_score="raise",
+            backend="threading", error_score=1e9,
         )
         started = perf_counter()
         search.fit(development, fh=fh)
