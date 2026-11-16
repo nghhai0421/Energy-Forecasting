@@ -1,0 +1,22 @@
+hpo:
+  n_trials: 8
+  seed: 42
+  orders:                 # Candidate non-seasonal (p, d, q) orders.
+    - [1, 0, 0]
+    - [1, 1, 0]
+    - [0, 1, 1]
+    - [1, 1, 1]
+    - [2, 1, 0]
+    - [2, 1, 1]
+    - [4, 1, 0]
+    - [4, 1, 1]
+  seasonal_orders:        # Candidate seasonal (P, D, Q, s) orders.
+    # - for 15-minute data: s = 4 (1 hour), s = 96 (1 day), s = 672 (1 week)
+    - [1, 0, 0, 4]        # 1h (4 x 15min) seasonal AR(1)
+    - [0, 1, 1, 4]        # 1h (4 x 15min) seasonal I(1) + MA(1)
+    - [1, 0, 1, 4]        # 1h (4 x 15min) seasonal ARMA(1, 1)
+    - [1, 1, 0, 4]        # 1h (4 x 15min) seasonal AR(1) + I(1)
+    - [1, 1, 1, 4]        # 1h (4 x 15min) seasonal ARIMA(1, 1, 1)
+    - [1, 0, 0, 96]       # 24h / 1d (96 x 15min) seasonal AR(1)
+    - [0, 1, 1, 96]       # 24h / 1d (96 x 15min) seasonal I(1) + MA(1)
+    - [1, 0, 1, 96]       # 24h / 1d (96 x 15min) seasonal ARMA(1, 1)
