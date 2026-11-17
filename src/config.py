@@ -1,6 +1,8 @@
 """Load experiment and model settings."""
 
 from pathlib import Path
+from datetime import date
+from zoneinfo import ZoneInfo
 
 import yaml
 
@@ -44,16 +46,29 @@ def load_run_settings(exp_cfg, mdl_cfg=None):
     dataset = experiment["data"]
     if "sources" in dataset:
         for source in dataset["sources"].values():
-            for key in ("path", "development", "demo"):
+            for key in ("path", "development", "test", "demo"):
                 if key in source:
-                    source[key] = str((PROJECT_ROOT / source[key]).resolve())
+                    paths = source[key]
+                    if isinstance(paths, list):
+                        source[key] = [str((PROJECT_ROOT / path).resolve()) for path in paths]
+                    else:
+                        source[key] = str((PROJECT_ROOT / paths).resolve())
     else:
         dataset["path"] = str((PROJECT_ROOT / dataset["path"]).resolve())
     experiment["output_root"] = str((PROJECT_ROOT / experiment["output_root"]).resolve())
 
     # Check Settings
     split = experiment["split"]
-    if not 0 < split["test_fraction"] < 1:
+    if experiment["model"] == "chronos2":
+        boundaries = [date.fromisoformat(split[key]) for key in
+                      ("development_start", "test_start", "test_end")]
+        if not boundaries[0] < boundaries[1] < boundaries[2]:
+            raise ValueError("Require development_start < test_start < test_end (exclusive).")
+        ZoneInfo(split["timezone"])
+        for name in ("consumption", "weather"):
+            if not all(dataset["sources"][name].get(key) for key in ("development", "test")):
+                raise ValueError(f"{name} requires development and test source paths.")
+    elif not 0 < split["test_fraction"] < 1:
         raise ValueError("test_fraction must be between 0 and 1.")
     if not 0 < split["train_window_fraction"] < 1:
         raise ValueError("train_window_fraction must be between 0 and 1.")

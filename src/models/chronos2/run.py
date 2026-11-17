@@ -1,13 +1,14 @@
 """Chronos-2: foundational model, load data, forecast with pretrained weights, and evaluate."""
 
 from pathlib import Path
+from copy import deepcopy
 from time import perf_counter
 
 import numpy as np
 import pandas as pd
 import sktime
 from sktime.performance_metrics.forecasting import MeanAbsoluteError, MeanSquaredError
-from sktime.split import SlidingWindowSplitter, temporal_train_test_split
+from sktime.split import SlidingWindowSplitter
 
 from src.config import load_run_settings
 from src.models.chronos2.inference import forecast, load_forecaster
@@ -58,17 +59,36 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
     run_name = run_name if run_name is not None else experiment["run_name"]
 
     # Load Data
-    y, X, series, preparation = load_data(dataset)
+    split = experiment["split"]
+    development_start, test_start, test_end = [
+        pd.Timestamp(split[key], tz=split["timezone"]).tz_convert("UTC")
+        for key in ("development_start", "test_start", "test_end")
+    ]
+    frequency = pd.Timedelta(dataset["frequency"])
+    evaluation_data = deepcopy(dataset)
+    for name in ("consumption", "weather"):
+        source = evaluation_data["sources"][name]
+        paths = []
+        for period in ("development", "test"):
+            paths.extend(source[period] if isinstance(source[period], list) else [source[period]])
+        source["development"] = paths
+    # Prepare one continuous history so imputation uses only prior observations.
+    y, X, series, preparation = load_data(
+        evaluation_data, after=development_start - frequency, until=test_end - frequency,
+    )
+    expected = pd.date_range(development_start, test_end, freq=frequency, inclusive="left")
+    if not pd.DatetimeIndex(series["timestamp"]).equals(expected):
+        raise ValueError("Sources must cover the complete development and test date ranges.")
 
     # Split Data
-    test_size = int(len(y) * experiment["split"]["test_fraction"])
-    development, test = temporal_train_test_split(y, test_size=test_size)
-    window_length = int(len(development) * experiment["split"]["train_window_fraction"])
+    development_size = int(series["timestamp"].lt(test_start).sum())
+    development, test = y.iloc[:development_size], y.iloc[development_size:]
+    window_length = int(len(development) * split["train_window_fraction"])
     # Keep the full requested context.
     if window_length < lookback:
         raise ValueError("The rolling window must contain at least forecast.lookback observations.")
     # Leave at least one complete CV and test forecast.
-    if test_size < horizon or len(development) - window_length < horizon:
+    if len(test) < horizon or len(development) - window_length < horizon:
         raise ValueError("Development validation and final test each need a full forecast horizon.")
     fh = np.arange(1, horizon + 1)
     cv = SlidingWindowSplitter(fh=fh, window_length=window_length, step_length=step)
@@ -94,7 +114,11 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
         "run_stage": "evaluation",
     }
     split_manifest = {
-        "fractions": experiment["split"],
+        "settings": split,
+        "development_range": {
+            "start": development_start.isoformat(), "end_exclusive": test_start.isoformat(),
+        },
+        "test_range": {"start": test_start.isoformat(), "end_exclusive": test_end.isoformat()},
         "development_observations": len(development),
         "test_observations": len(test),
         "window_length": window_length,

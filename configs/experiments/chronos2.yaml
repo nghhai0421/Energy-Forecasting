@@ -6,6 +6,7 @@ data:
   sources:
     consumption:
       development: Dataset/raw/csv/Actual_consumption_2023_2024_Quarterhour.csv
+      test: Dataset/raw/csv/Actual_consumption_2025_Quarterhour.csv
       demo: Dataset/raw/csv/Actual_consumption_2025_Quarterhour.csv
       timestamp_column: Start date
       timezone: Europe/Berlin
@@ -16,6 +17,7 @@ data:
 
     weather:
       development: Dataset/raw/csv/open-meteo-48.83N9.15E293m_2023_2024.csv
+      test: Dataset/raw/csv/open-meteo-48.83N9.15E293m_2025.csv
       demo: Dataset/raw/csv/open-meteo-48.83N9.15E293m_2025.csv
       timestamp_column: time
       timezone: "+02:00" # Open-Meteo uses a fixed offset throughout the year.
@@ -28,6 +30,7 @@ data:
       path: Dataset/raw/csv/df_holiday.csv
       date_column: Datum
       timezone: Europe/Berlin
+      additional_dates: ["2025-01-01", "2025-01-06"] # January holidays in Baden-Wuerttemberg.
 
   timestamp_column: timestamp_utc
   target_column: Residual load [MWh]
@@ -63,10 +66,13 @@ data:
 forecast:
   lookback: 672 # Seven days at 15-minute resolution.
   horizon: 96 # Forecast the next 24 hours.
-  step_length: 96 # Advance the evaluation origin by 24 hours.
+  step_length: 4 # Advance the evaluation origin by one hour.
 
 split:
-  test_fraction: 0.2
+  timezone: Europe/Berlin
+  development_start: "2023-01-01"
+  test_start: "2025-01-01"
+  test_end: "2025-02-01" # Exclusive; all forecast targets stay within January.
   train_window_fraction: 0.8
 
 output_root: outputs
