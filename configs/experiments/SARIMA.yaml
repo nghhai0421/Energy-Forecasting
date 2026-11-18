@@ -1,0 +1,19 @@
+run_name: SARIMA_run
+
+model: SARIMA
+
+data:
+  path: Dataset/raw/csv/Actual_consumption_2023_2024_Quarterhour.csv
+  timestamp_column: Start date
+  target_column: grid load [MWh]
+  frequency: 15min
+
+forecast:
+  horizon: 96
+  step_length: 96
+
+split:
+  test_fraction: 0.2
+  train_window_fraction: 0.8
+
+output_root: outputs

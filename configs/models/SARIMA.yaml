@@ -1,0 +1,27 @@
+hpo:
+  n_trials: 8
+  seed: 42
+  orders:                 # Candidate non-seasonal (p, d, q) orders (must have p < s and q < s).
+    - [1, 0, 0]
+    - [1, 1, 0]
+    - [0, 1, 1]
+    - [1, 1, 1]
+    - [2, 1, 0]
+    - [2, 1, 1]
+    - [4, 1, 0]
+    - [4, 1, 1]
+  seasonal_orders:        # Candidate seasonal (P, D, Q, s) orders (use D=0 when d=1 to avoid over-differencing).
+    # - for 15-minute data: s = 4 (1 hour), s = 8 (2 hours), s = 48 (1/2 day), s = 96 (1 day)
+    - [1, 0, 0, 4]
+    - [0, 0, 1, 4]
+    - [1, 0, 1, 4]
+    - [2, 0, 0, 4]
+    - [2, 0, 1, 4]
+    - [1, 0, 0, 8]
+    - [0, 0, 1, 8]
+    - [1, 0, 1, 8]
+    - [2, 0, 0, 8]
+    - [2, 0, 1, 8]
+  #  - [1, 0, 0, 96]       
+  #  - [0, 1, 1, 96]       
+  #  - [1, 0, 1, 96]       
