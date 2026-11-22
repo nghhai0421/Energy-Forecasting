@@ -11,7 +11,7 @@ For **forecast direction and asymmetric weighted loss**, we evaluate only the pr
 - **Aggregation:** Calculate the error and loss for each selected prediction, then aggregate across forecast origins using a simple arithmetic mean where appropriate.
 - **Overall accuracy:** MAE and RMSE use all 96 steps of every forecast to measure general prediction accuracy.
 - **Interpretation:** Step 96 corresponds to **one 15-minute interval at the end of the 24-hour horizon**, not the sum of energy required during the entire day. Selected target intervals are one hour apart because forecasts are issued hourly.
-- **TransnetBW assumption:** An hourly rolling forecast schedule has **not been verified**. The planned comparison requires historical TransnetBW predictions that correspond to the same forecast origins and lead times.
+- **TransnetBW assumptions:** Use an hourly rolling 24-hour forecasting schedule for this comparison. Assume the benchmark forecasts include a safety margin against underestimating residual-load requirements.
 
 ## 2. Forecasting Setup
 
@@ -24,7 +24,7 @@ For **forecast direction and asymmetric weighted loss**, we evaluate only the pr
 - **Forecast step:** 4 observations (one new forecast every hour).
 - **TransnetBW forecast frequency:** Assumed hourly for this evaluation.
 - **Forecast output:** 96 predictions per forecast origin.
-- **Evaluation period:** Same held-out period and actual target values for all three models.
+- **Evaluation period:** Two weeks in January 2025, matching the demo period; use the same actual target values for all three models.
 
 Each forecast uses the preceding 672 observations to predict the next 96 intervals. After one hour, four new observations become available and another forecast is issued. **No hourly aggregation is performed.**
 
@@ -144,7 +144,7 @@ The weighted loss is a **hypothetical cost-sensitive evaluation score**, not a m
 3. Compute **MAE and RMSE across all 96 forecast steps**.
 4. Filter to **`horizon_step == 96`**, keeping one final-step prediction per forecast origin.
 5. Compute **forecast-direction metrics and asymmetric weighted loss** for the filtered predictions.
-6. Compare models using aligned target intervals and lead times. For TransnetBW, apply the assumed hourly issuance schedule only when the necessary corresponding historical forecasts are available.
+6. Compare models using aligned target intervals and lead times under the assumed TransnetBW hourly rolling 24-hour forecasting schedule.
 
 ## 5. Final Model Comparison
 
