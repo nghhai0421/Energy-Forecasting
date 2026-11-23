@@ -7,8 +7,8 @@ Use the project environment in [environment.yml](../environment.yml). Run Python
 | [split_raw_datasets.ipynb](split_raw_datasets.ipynb) | Split full-period workbooks in `Dataset/raw/xlsx/`; generate BW holidays using `holidays`. | Six subsets for 2023-2024 and Jan-Nov 2025, plus holidays for 2023-2025, in the same folder. Existing workbooks are overwritten. |
 | [convert_raw_to_csv.py](convert_raw_to_csv.py) | Convert the six subset workbooks and holiday workbook; remove metadata preambles. | Matching filenames in `Dataset/raw/csv/`. Existing CSVs are skipped. |
 | [add_seasonal_features.py](add_seasonal_features.py) | Generate calendar features from a timestamp column. | A DataFrame copy with eight sine/cosine pairs and year immediately after the timestamp column. |
-| [exploration.ipynb](exploration.ipynb) | Inspect missing values, duplicates, timestamps, and relationships in raw data. | Notebook tables and plots. |
-| [preprocessing.py](preprocessing.py) | Load the merged CSV, building it from raw Excel if absent; impute using prior observations and aggregate hourly. | Merged data and 1-year (2023) / 5-year (2019-2023) variants at 15-minute and hourly resolutions in `Dataset/preprocessed/`. |
+| [exploration.ipynb](exploration.ipynb) | Inspect missing values, duplicates, timestamps, and target (`Residual load [MWh]`) distribution in 2023-2024 raw data. | Notebook tables and plots. |
+| [preprocessing.py](preprocessing.py) | Load the 2023-2024 and 2025 raw consumption datasets (`Actual_consumption_2023_2024_Quarterhour` and `Actual_consumption_2025_Quarterhour`) without merging and interpolate missing values in `Residual load [MWh]`. | Preprocessed `Actual_consumption_2023_2024_Quarterhour.csv` and `Actual_consumption_2025_Quarterhour.csv` in `Dataset/preprocessed/`. |
 
 ## Usage
 

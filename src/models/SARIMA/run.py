@@ -101,7 +101,10 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
         dates = pd.to_datetime(ts_col, format="%d.%m.%Y %H:%M")
     # SMARD uses Berlin time; infer repeated autumn hours in file order.
     dates = dates.dt.tz_localize("Europe/Berlin", ambiguous="infer").dt.tz_convert("UTC")
-    values = pd.to_numeric(raw[dataset["target_column"]]).to_numpy(dtype=float)
+    target_series = pd.to_numeric(raw[dataset["target_column"]], errors="coerce")
+    if target_series.isna().any():
+        target_series = target_series.fillna(target_series.expanding(min_periods=1).mean().shift(1))
+    values = target_series.to_numpy(dtype=float)
     series = pd.DataFrame({"timestamp": dates, "target": values})
     y = pd.Series(values, name=dataset["target_column"])
 
