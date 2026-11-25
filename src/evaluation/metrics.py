@@ -4,6 +4,20 @@ import numpy as np
 from sktime.performance_metrics.forecasting import MeanAbsoluteError, MeanSquaredError
 
 
+def directional_errors(actual, prediction):
+    """Sum energy errors over supplied rows; callers must state overlap policy."""
+    error = np.asarray(actual, dtype=float) - np.asarray(prediction, dtype=float)
+    if not len(error) or not np.isfinite(error).all():
+        raise ValueError("Directional metrics require nonempty finite actuals and forecasts.")
+    return {
+        "bias_actual_minus_prediction": float(error.mean()),
+        "underprediction_total": float(np.maximum(error, 0).sum()),
+        "overprediction_total": float(np.maximum(-error, 0).sum()),
+        "underprediction_fraction": float((error > 0).mean()),
+        "overprediction_fraction": float((error < 0).mean()),
+    }
+
+
 def summarize_predictions(predictions):
     """Calculate overall, horizon, and validation-fold MAE and RMSE.
 
@@ -34,7 +48,15 @@ def summarize_predictions(predictions):
             "n_predictions": len(predictions),
             "mae": float(mae(actual, prediction)),
             "rmse": float(rmse(actual, prediction)),
+            **directional_errors(actual, prediction),
         },
+    }
+    metrics["aggregation"] = {
+        "scope": "forecast origin/target pairs; overlapping delivery intervals count repeatedly",
+        "direction": "residual = actual - prediction; positive means underprediction",
+        "units": "same as target; totals sum supplied forecast rows",
+        "unique_target_timestamps": int(predictions["target_timestamp"].nunique()),
+        "forecast_origins": int(predictions["forecast_origin"].nunique()),
     }
 
     # Calc Horizon Metrics
@@ -47,6 +69,7 @@ def summarize_predictions(predictions):
             "n_predictions": len(rows),
             "mae": float(mae(actual, prediction)),
             "rmse": float(rmse(actual, prediction)),
+            **directional_errors(actual, prediction),
         })
     metrics["by_horizon"] = by_horizon
 
@@ -64,6 +87,7 @@ def summarize_predictions(predictions):
                 "n_predictions": len(rows),
                 "mae": float(mae(actual, prediction)),
                 "rmse": float(rmse(actual, prediction)),
+                **directional_errors(actual, prediction),
             },
         })
     metrics["folds"] = folds

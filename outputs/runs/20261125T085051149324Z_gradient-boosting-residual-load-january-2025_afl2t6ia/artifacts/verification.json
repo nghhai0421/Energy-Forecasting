@@ -1,0 +1,15 @@
+{
+  "date": "2026-11-25",
+  "tests_passed": 27,
+  "grid_prediction_rows_exactly_reproduced": 32064,
+  "residual_prediction_rows_exactly_reproduced": 69216,
+  "notebook_executed": true,
+  "python": "3.11.6",
+  "pandas": "3.0.6",
+  "numpy": "2.4.6",
+  "sklearn": "1.9.1",
+  "sktime": "1.2.0",
+  "chronos_prediction_sha256": "89c2fe3f6cc03ce80da74dab965557930925439f2bb6a8c668188edd6c996fb4",
+  "test_command": "python -m unittest discover -s tests -q",
+  "hash_normalization": "CRLF converted to LF"
+}

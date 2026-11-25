@@ -23,7 +23,7 @@
         "invalid_negative": 0,
         "imputed": 0
       },
-      "temperature_2m (°C)": {
+      "temperature_2m (\u00b0C)": {
         "missing": 4,
         "invalid_negative": 0,
         "imputed": 4
@@ -33,12 +33,12 @@
         "invalid_negative": 0,
         "imputed": 4
       },
-      "dew_point_2m (°C)": {
+      "dew_point_2m (\u00b0C)": {
         "missing": 4,
         "invalid_negative": 0,
         "imputed": 4
       },
-      "Germany/Luxembourg [€/MWh]": {
+      "Germany/Luxembourg [\u20ac/MWh]": {
         "missing": 0,
         "invalid_negative": 0,
         "imputed": 0
@@ -137,10 +137,10 @@
       "observation_delay_minutes": 60,
       "lag_fields": {
         "load": "grid load [MWh]",
-        "temperature": "temperature_2m (°C)",
+        "temperature": "temperature_2m (\u00b0C)",
         "wind": "wind_speed_10m (km/h)",
-        "dew_point": "dew_point_2m (°C)",
-        "price": "Germany/Luxembourg [€/MWh]"
+        "dew_point": "dew_point_2m (\u00b0C)",
+        "price": "Germany/Luxembourg [\u20ac/MWh]"
       }
     },
     "source_settings": {
@@ -155,16 +155,16 @@
         "timestamp_column": "time",
         "timezone": "+02:00",
         "columns": [
-          "temperature_2m (°C)",
+          "temperature_2m (\u00b0C)",
           "wind_speed_10m (km/h)",
-          "dew_point_2m (°C)"
+          "dew_point_2m (\u00b0C)"
         ]
       },
       "prices": {
         "timestamp_column": "Start date",
         "timezone": "Europe/Berlin",
         "columns": [
-          "Germany/Luxembourg [€/MWh]"
+          "Germany/Luxembourg [\u20ac/MWh]"
         ]
       },
       "holidays": {
@@ -210,7 +210,7 @@
         "invalid_negative": 0,
         "imputed": 0
       },
-      "temperature_2m (°C)": {
+      "temperature_2m (\u00b0C)": {
         "missing": 4,
         "invalid_negative": 0,
         "imputed": 4
@@ -220,12 +220,12 @@
         "invalid_negative": 0,
         "imputed": 4
       },
-      "dew_point_2m (°C)": {
+      "dew_point_2m (\u00b0C)": {
         "missing": 4,
         "invalid_negative": 0,
         "imputed": 4
       },
-      "Germany/Luxembourg [€/MWh]": {
+      "Germany/Luxembourg [\u20ac/MWh]": {
         "missing": 0,
         "invalid_negative": 0,
         "imputed": 0
@@ -237,7 +237,7 @@
   },
   "hpo_source": "outputs/hpo_runs/20261113T123333192472Z_gradient-boosting-final-grid-load-15min-hpo_af8e41657b18",
   "frozen_model_hash": "e372cf071d514e6ecd570601bedfa360",
-  "checkpoint_created_before_demo": "outputs/trained_models/20261113T123337529392Z_gbt_final/model.joblib",
+  "checkpoint_created_before_demo": "outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/checkpoints/model.joblib",
   "updated_at_utc": "2026-11-13T12:33:55.673880Z",
   "summary": {
     "cv_mean_fold": {
@@ -247,7 +247,12 @@
     "final_test": {
       "n_predictions": 32064,
       "mae": 58.36060991885504,
-      "rmse": 79.07552894277006
+      "rmse": 79.07552894277006,
+      "bias_actual_minus_prediction": -7.945597069938921,
+      "underprediction_total": 808253.4859938232,
+      "overprediction_total": 1063021.1104443446,
+      "underprediction_fraction": 0.44638847305389223,
+      "overprediction_fraction": 0.5536115269461078
     },
     "selected_parameters": {
       "learning_rate": 0.05337193482375701,
@@ -261,5 +266,14 @@
     "parameter_source": "hpo",
     "validation_score": 72.71880283576692,
     "checkpoint": "checkpoints/model.joblib"
+  },
+  "output_schema_version": 2,
+  "output_standardization": "artifacts/output_standardization.json",
+  "comparisons": {
+    "transnetbw": {
+      "metrics": "metrics/transnetbw_summary.json",
+      "predictions": "predictions/transnetbw_aligned.csv",
+      "plot": "outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/plots/transnetbw_monthly_comparison.png"
+    }
   }
 }

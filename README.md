@@ -80,7 +80,7 @@ hyperparameters from a saved HPO run. Use `--run-name` to set the run name.
 
 ## Gradient boosting
 
-Use one configuration, [configs/experiments/gradient_boosting.yaml](configs/experiments/gradient_boosting.yaml), for the final experiment. It contains source files, splits, the selected model parameters and the HPO search space.
+For the retained grid-load experiment use [configs/experiments/gradient_boosting.yaml](configs/experiments/gradient_boosting.yaml), for the final experiment. It contains source files, splits, the selected model parameters and the HPO search space.
 
 ```powershell
 $env:OMP_NUM_THREADS = "1"
@@ -99,13 +99,12 @@ GBT is trained on separate 2023-2024 files and replays January-November 2025 wit
 fixed weights. Its 28 features use historical load, temperature, wind, dew point
 and price at effective 25h/169h lags, shared calendar encodings and BW holidays.
 Each origin predicts 96 quarter-hours. The target is grid load in MWh per interval;
-Chronos-2's residual-load target and evaluation split differ.
+Use [the matched comparison configuration](configs/experiments/gradient_boosting_chronos_comparison.yaml) for January residual load with hourly origins, matching Chronos-2. The [results index](reports/model_results.md) links both comparisons and their artifacts.
 
 Read the [final setup and TransnetBW comparison](reports/transnetbw_2025_final_comparison.md)
 for preprocessing, all features, HPO, saved artifacts and reproduction commands.
 The [demo notebook](preprocessing/gbt_final_demo.ipynb) demonstrates frozen inference.
-The only GBT plot is the TransnetBW comparison figure;
-GBT training/HPO do not generate extra plots.
+GBT evaluation produces the same standard plots as Chronos-2 inside its run. Comparison plots are saved there too.
 
 ## Outputs
 
@@ -121,11 +120,15 @@ Saved files:
 - `artifacts/selected_parameters.json`: model parameters and their source.
 - `artifacts/hpo_trials.csv`: trial parameters and validation scores (with HPO).
 - `predictions/cv_validation.csv`, `final_test.csv`: actuals, forecasts, and residuals.
-- `metrics/cv_validation.json`, `final_test.json`: MAE/RMSE overall and by horizon;
+- `metrics/cv_validation.json`, `final_test.json`: MAE/RMSE and directional errors overall and by horizon;
   CV also includes fold scores and their mean.
 - `metrics/*_evaluation.csv`: per-fold scores and timings.
 - `checkpoints/model.joblib`: fitted development model (Ridge/ARIMA/Gradient Boosting).
+- `artifacts/development_features.csv`, `first_demo_features.csv`: GBT prepared input tables.
+- `artifacts/training_manifest.json`: GBT training provenance.
 - `logs/error.log`: details if output saving fails.
+
+Forecast CSVs share exactly these columns: `split,fold,forecast_origin,cutoff_timestamp,target_timestamp,horizon_step,actual,prediction,residual`. Residual is actual minus prediction. Directional totals in standard metrics sum forecast rows: overlapping origins repeat delivery intervals. Use the non-overlapping comparison CSV for energy-volume totals. See [the results index and reproduction commands](reports/model_results.md).
 
 Timing reports mean fit time, mean prediction time, and total evaluation time
 separately for validation and test, in seconds. Means are per forecast origin;
@@ -133,7 +136,7 @@ total evaluation includes fitting, prediction, scoring, and overhead. For Chrono
 fit means context setup, not weight training. Hardware records the device, CPU
 model, and logical core count. These details also appear in the shell summary.
 
-ARIMA/Ridge/Chronos graphs in `plots/` (GBT retains only the separate TransnetBW comparison plot):
+Evaluation graphs for all models, including GBT, are saved in the run's `plots/` folder:
 
 - `forecast_example_1.png` to `forecast_example_3.png`: up to three test forecasts
   against actuals, with recent history and the train/test boundary.
@@ -142,8 +145,7 @@ ARIMA/Ridge/Chronos graphs in `plots/` (GBT retains only the separate TransnetBW
 - `final_test_residuals_over_time.png`: one-step forecast residuals over time.
 - `optuna_validation_history.png`: trial scores and best score so far (with HPO).
 
-HPO-only runs save the manifest and artifacts. Evaluation runs save predictions
-and metrics. Other model runners can also generate the graphs listed above. Chronos-2 records the
+HPO-only runs save the manifest and artifacts. Evaluation runs save predictions, metrics and the graphs listed above. Chronos-2 records the
 pretrained model ID, resolved revision when available, and inference settings
 instead of saving another weights checkpoint.
 

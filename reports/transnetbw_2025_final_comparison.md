@@ -1,6 +1,6 @@
 # Gradient boosting: final setup and TransnetBW comparison
 
-Evaluated 2026-11-13 using saved predictions. Setup and documentation consolidated 2026-11-14. This is the main report for the project gradient boosting experiment.
+Evaluated 2026-11-13 using saved predictions. Setup and documentation consolidated 2026-11-14. This report describes the retained grid-load experiment. See the [results index](model_results.md) for the matched GBT / Chronos-2 residual-load comparison and current artifact layout.
 
 ## Coverage and matching
 
@@ -158,7 +158,7 @@ The timestamp is the index and the contemporaneous grid load is the label; neith
 
 Calendar pairs use the shared function's `sin/cos(2π × component / (period−1))` convention, including zero-based day/month/week offsets. This differs from conventional period denominators; it was inherited, not optimized. Seconds are always zero on this grid, so that sine/cosine pair is constant. Tree models also do not extrapolate a numeric year trend beyond the training years. These are design limitations to review for a future model, not changes made to the frozen experiment.
 
-Inspect the exact ordered training table in [gbt_final_development.csv](../Dataset/processed/gbt_final_development.csv) or the first forecast's [feature table](../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/artifacts/first_demo_features.csv).
+Inspect the exact ordered training table in [development_features.csv](../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/artifacts/development_features.csv) or the first forecast's [feature table](../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/artifacts/first_demo_features.csv).
 
 ## Hyperparameter selection
 
@@ -189,7 +189,7 @@ The winning mean-fold RMSE is **72.71880283576692 MWh**. All 12 trials completed
 
 ## Run the experiment
 
-The only GBT configuration is [configs/experiments/gradient_boosting.yaml](../configs/experiments/gradient_boosting.yaml). It contains the data contract, splits, selected model parameters and optional HPO settings. Omit `--mdl-cfg`, as with Chronos-2.
+The grid-load GBT configuration is [configs/experiments/gradient_boosting.yaml](../configs/experiments/gradient_boosting.yaml). It contains the data contract, splits, selected model parameters and optional HPO settings. Omit `--mdl-cfg`, as with Chronos-2.
 
 ```powershell
 $env:OMP_NUM_THREADS = '1'
@@ -204,13 +204,13 @@ This refits with the selected parameters and replays the 2025 data. Use `--stage
 --hpo-run outputs/hpo_runs/20261113T123333192472Z_gradient-boosting-final-grid-load-15min-hpo_af8e41657b18
 ```
 
-For inference without fitting, use [the demo notebook](../preprocessing/gbt_final_demo.ipynb). It loads the saved checkpoint and reproduces the first two forecasts, initially using only 2024 history, then adding newly observed first-day values. Training and HPO save numerical artifacts without generating plots. The comparison command below generates the single retained figure.
+For inference without fitting, use [the demo notebook](../preprocessing/gbt_final_demo.ipynb). It loads the saved checkpoint and reproduces the first two forecasts, initially using only 2024 history, then adding newly observed first-day values. Evaluation writes the standard forecast, horizon-error and residual plots under the run. The comparison command below adds the TransnetBW figure there.
 
-The [saved run manifest](../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/run_manifest.json) records source hashes, feature order and preprocessing counts. The [verification audit](../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/artifacts/verification.json) records the original environment and model checks. Immutable run snapshots retain the configuration names used when the experiment was executed; the commands here use the consolidated setup. The final evaluation, HPO selection, checkpoint and benchmark snapshots under `outputs/` are included for review. Newly generated runs remain ignored by Git.
+The [saved run manifest](../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/run_manifest.json) records source hashes, feature order and preprocessing counts. The [verification audit](../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/artifacts/verification.json) records the original environment and model checks. Historical configuration artifacts retain the names used when the experiment was executed; the commands here use the consolidated setup. The final evaluation, HPO selection, checkpoint and benchmark snapshots under `outputs/` are included for review. Newly generated runs remain ignored by Git.
 
 ## Artifacts
 
-`aligned_predictions.csv`, `monthly_metrics.csv` and `summary.json` (including input hashes) are saved in `outputs/benchmarks/transnetbw_2025_gbt_final/`. The only GBT plot is `reports/transnetbw_2025_final_comparison.png`.
+`predictions/transnetbw_aligned.csv`, `metrics/transnetbw_monthly.csv`, `metrics/transnetbw_summary.json` (including input hashes), and `plots/transnetbw_monthly_comparison.png` are stored in the source run. Prepared feature tables, training metadata and the checkpoint also live in that run.
 
 ## Reproduce and inspect
 
@@ -223,14 +223,14 @@ evaluation, replace the dated run directory with the newly created directory und
 `outputs/runs/`.
 
 ```powershell
-python -m src.evaluation.compare_operational --predictions outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/predictions/final_test.csv --actual Dataset/benchmarks/transnetbw/actual_consumption.csv --forecast Dataset/benchmarks/transnetbw/forecasted_consumption.csv --output outputs/benchmarks/transnetbw_2025_gbt_final
+python -m src.evaluation.compare_operational --predictions outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/predictions/final_test.csv --actual Dataset/benchmarks/transnetbw/actual_consumption.csv --forecast Dataset/benchmarks/transnetbw/forecasted_consumption.csv
 ```
 
-[Aligned interval predictions](../outputs/benchmarks/transnetbw_2025_gbt_final/aligned_predictions.csv),
-[metrics and input hashes](../outputs/benchmarks/transnetbw_2025_gbt_final/summary.json),
-and [monthly metrics](../outputs/benchmarks/transnetbw_2025_gbt_final/monthly_metrics.csv).
+[Aligned interval predictions](../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/predictions/transnetbw_aligned.csv),
+[metrics and input hashes](../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/metrics/transnetbw_summary.json),
+and [monthly metrics](../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/metrics/transnetbw_monthly.csv).
 
-![GBT and published TransnetBW monthly errors](transnetbw_2025_final_comparison.png)
+![GBT and published TransnetBW monthly errors](../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/plots/transnetbw_monthly_comparison.png)
 
 The comparison contains only GBT and the published forecast; learned model weights and saved predictions remain unchanged.
 GBT's larger underprediction total means lower MAE should not be interpreted as fewer
@@ -242,14 +242,18 @@ quarter-hour errors are serially dependent.
 The consolidated setup passes 23 current tests. A fresh evaluation using the single
 experiment YAML reproduced all 32,064 saved final predictions exactly and matched
 the retained HPO experiment signature. The saved prediction file hash is unchanged. Checkpoint packaging is described below. The updated demo notebook executes successfully and reproduces
-its first two forecasts. GBT training/HPO generate no plot images; comparison output
-writes the single figure shown above. Tests for removed experiment implementations
+its first two forecasts. At that time, GBT training/HPO generated no plot images;
+the current output layout supersedes that plotting policy (see below). Tests for removed experiment implementations
 were removed with their implementations.
 
 Path portability was verified by reloading the exported configuration under a different checkout root. The comparison command was rerun using the repository benchmark files and reproduced the reported scores.
 
 ## Review snapshot packaging (2026-11-15)
 
-The retained checkpoint was reserialized with repository-relative source paths before sharing. No fitting or weight updates occurred. Both saved checkpoint copies are identical; the verification JSON records the original file hash, the packaged file hash and the unchanged learned-estimator hash. All report artifact links refer to the included final-run snapshots. Generated HTML previews remain local.
+The retained checkpoint was reserialized with repository-relative source paths before sharing. No fitting or weight updates occurred. The two checkpoint copies were identical at packaging; the verification JSON records the original file hash, the packaged file hash and the unchanged learned-estimator hash. All report artifact links refer to the included final-run snapshots. Generated HTML previews remain local.
 
 PR validation on the updated main branch: 24 tests passed; the portable checkpoint reproduced all 32,064 saved predictions exactly, and every demo notebook code cell executed successfully.
+
+## Output standardization (2026-11-25)
+
+The source run now uses the same nine forecast CSV columns and standard plots as Chronos-2. Actual and prediction values were verified unchanged; CSV hashes changed because obsolete baseline/deficit/surplus columns were removed. `artifacts/output_standardization.json` records both hashes. The verification and cleanup sections above describe the historical execution. The duplicate checkpoint and full demo prediction file were removed after equality checks. Legacy weekly-baseline summaries are retained under `artifacts/legacy_weekly_baseline_*`; they are outside the current comparison.

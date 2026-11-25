@@ -1,6 +1,7 @@
 """Leakage, replay parity, and source isolation checks for final GBT experiments."""
 
 import copy
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -115,6 +116,38 @@ class FinalGBTTests(unittest.TestCase):
             forecast(self.bundle, self.history.drop(self.origin - pd.Timedelta(minutes=15)), self.origin)
         with self.assertRaises(ValueError):
             forecast(self.bundle, self.history, self.origin - pd.Timedelta(days=1))
+
+    def test_hourly_replay_stays_inside_test_boundary_and_one_run(self):
+        data = copy.deepcopy(self.data)
+        for name in ("consumption", "weather", "prices"):
+            source = data["sources"][name]
+            raw = pd.read_csv(source["development"])
+            raw.iloc[:16 * 96].to_csv(source["development"], index=False)
+            source["demo"] = str(self.root / f"{name}_demo.csv")
+            raw.iloc[16 * 96:].to_csv(source["demo"], index=False)
+        experiment = dict(model="gradient_boosting", run_name="hourly_test", data=data,
+            forecast=dict(lookback=676, horizon=96, step_length=4), output_root=str(self.root / "outputs"),
+            parameters=dict(max_iter=2, max_leaf_nodes=4),
+            split=dict(train_start=self.dates[0].isoformat(), test_start=self.origin.isoformat(),
+                       test_end=(self.origin + pd.Timedelta(days=2)).isoformat(),
+                       validation_starts=[self.dates[12 * 96].isoformat()]))
+        config = self.root / "experiment.yaml"
+        config.write_text(yaml.safe_dump(experiment), encoding="utf-8")
+        with patch("builtins.print"):
+            path = run_experiment(config)
+        predictions = pd.read_csv(path / "predictions/final_test.csv")
+        self.assertEqual(len(predictions), 25 * 96)
+        self.assertEqual(predictions.forecast_origin.nunique(), 25)
+        self.assertEqual(predictions.target_timestamp.nunique(), 192)
+        self.assertEqual(list(predictions), ["split", "fold", "forecast_origin", "cutoff_timestamp",
+                         "target_timestamp", "horizon_step", "actual", "prediction", "residual"])
+        self.assertLess(pd.to_datetime(predictions.target_timestamp, utc=True).max(), self.origin + pd.Timedelta(days=2))
+        self.assertTrue((path / "checkpoints/model.joblib").is_file())
+        self.assertTrue((path / "artifacts/development_features.csv").is_file())
+        self.assertTrue((path / "plots/forecast_example_1.png").is_file())
+        self.assertEqual(list((self.root / "outputs").iterdir()), [path.parent])
+        manifest = json.loads((path / "run_manifest.json").read_text())
+        self.assertEqual(manifest["status"], "completed")
 
 
 if __name__ == "__main__":

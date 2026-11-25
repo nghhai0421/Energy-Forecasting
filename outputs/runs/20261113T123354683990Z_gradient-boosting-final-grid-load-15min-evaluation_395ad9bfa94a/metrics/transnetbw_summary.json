@@ -1,5 +1,5 @@
 {
-  "evaluated_at_utc": "2026-11-14T17:49:06.129022+00:00",
+  "evaluated_at_utc": "2026-11-25T08:57:10.423247+00:00",
   "metrics": {
     "GBT": {
       "intervals": 32064,
@@ -31,18 +31,19 @@
   "gbt_rmse_change_vs_published_percent": -41.59768279706738,
   "gbt_lower_absolute_error_fraction": 0.782435129740519,
   "downloaded_actuals_match_saved_labels": true,
+  "input_hash_normalization": "CSV bytes with CRLF converted to LF, so hashes survive Git line-ending conversion.",
   "inputs": {
     "predictions": {
       "path": "outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/predictions/final_test.csv",
-      "sha256": "d34448ba14feb22da9df7204b2f0f97f07b2af7464112c735d83537eff030b9c"
+      "sha256": "e22762d9b0f6c40e444cc5b2b8f9ed68456fdc0519b23356cbff521df6416b5b"
     },
     "actual": {
       "path": "Dataset/benchmarks/transnetbw/actual_consumption.csv",
-      "sha256": "5202dda1bd26ef8f9aaf892130b5e0c7a6ce2aec71213b62446b963d67bf5093"
+      "sha256": "123212e1909f9a5b7dfd602b31f8e1f230465822d2d231c301b5850f1d84190d"
     },
     "forecast": {
       "path": "Dataset/benchmarks/transnetbw/forecasted_consumption.csv",
-      "sha256": "7fae95fc04ec223117fc06b0f4cddba0e133914c2d753985e592d46a636fb88f"
+      "sha256": "dfac8236629d1784a812cf0820736ea8ceb3568d699ed3f64cb88c66c191bbef"
     }
   },
   "comparison_status": "retrospective delivery-time match; issue times and forecast revisions not matched",

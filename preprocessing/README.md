@@ -58,7 +58,7 @@ calendar inputs and are bundled with the checkpoint. Raw files are preserved.
 Two lags each for load, temperature, wind, dew point and price use effective offsets
 of 25 and 169 hours (nominal 24/168 hours plus the configured one-hour availability
 buffer). The 17 shared calendar encodings and holiday flag bring the input count
-to 28. `Dataset/processed/gbt_final_development.csv` contains 69,500 usable training
+to 28. `outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/artifacts/development_features.csv` contains 69,500 usable training
 rows after the 676-row warm-up. `preprocessing/gbt_final_demo.ipynb` demonstrates
 the same preparation and frozen inference functions used by the final evaluation.
 

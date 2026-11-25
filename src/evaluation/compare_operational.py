@@ -46,10 +46,12 @@ def score(rows, column):
     }
 
 
-def compare(predictions_path, actual_path, forecast_path, output, plot_path=None):
-    output = Path(output)
+def compare(predictions_path, actual_path, forecast_path, output=None, plot_path=None):
+    output = Path(output) if output is not None else Path(predictions_path).parent.parent
     output.mkdir(parents=True, exist_ok=True)
-    plot_path = Path(plot_path) if plot_path is not None else output / "monthly_comparison.png"
+    for folder in ("artifacts", "metrics", "predictions", "plots"):
+        (output / folder).mkdir(exist_ok=True)
+    plot_path = Path(plot_path) if plot_path is not None else output / "plots/transnetbw_monthly_comparison.png"
     plot_path.parent.mkdir(parents=True, exist_ok=True)
     predictions = pd.read_csv(predictions_path)
     # Legacy run files may contain a baseline; it is outside this comparison.
@@ -107,16 +109,20 @@ def compare(predictions_path, actual_path, forecast_path, output, plot_path=None
         "gbt_rmse_change_vs_published_percent": rmse_delta,
         "gbt_lower_absolute_error_fraction": float((rows.gbt_error_mwh.abs() < rows.published_error_mwh.abs()).mean()),
         "downloaded_actuals_match_saved_labels": True,
-        "inputs": {label: {"path": portable_paths(Path(path).resolve()), "sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest()}
+        "input_hash_normalization": "CSV bytes with CRLF converted to LF, so hashes survive Git line-ending conversion.",
+        "inputs": {label: {"path": portable_paths(Path(path).resolve()), "sha256": hashlib.sha256(Path(path).read_bytes().replace(b"\r\n", b"\n")).hexdigest()}
                    for label, path in (("predictions", predictions_path), ("actual", actual_path), ("forecast", forecast_path))},
         "comparison_status": "retrospective delivery-time match; issue times and forecast revisions not matched",
         "observation_delay_minutes": delay,
         "source_value_column": "grid load [MWh] Original resolutions",
         "region_provenance": "TransnetBW selection supplied with these exports; region is not embedded in CSV headers",
     }
-    rows.to_csv(output / "aligned_predictions.csv", index=False)
-    monthly.to_csv(output / "monthly_metrics.csv", index=False)
-    (output / "summary.json").write_text(json.dumps(summary, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+    for prefix, column in (("gbt", "prediction"), ("published", "published_forecast_mwh")):
+        rows[f"{prefix}_underprediction_mwh"] = (rows.actual_mwh - rows[column]).clip(lower=0)
+        rows[f"{prefix}_overprediction_mwh"] = (rows[column] - rows.actual_mwh).clip(lower=0)
+    rows.to_csv(output / "predictions/transnetbw_aligned.csv", index=False)
+    monthly.to_csv(output / "metrics/transnetbw_monthly.csv", index=False)
+    (output / "metrics/transnetbw_summary.json").write_text(json.dumps(summary, indent=2, allow_nan=False) + "\n", encoding="utf-8")
 
     figure, axes = plt.subplots(1, 2, figsize=(12, 4))
     for name in models:
@@ -219,10 +225,20 @@ and [ENTSO-E load data definitions](https://transparencyplatform.zendesk.com/hc/
 
 ## Artifacts
 
-`aligned_predictions.csv`, `monthly_metrics.csv` and `summary.json` (including input
-hashes) are saved alongside this report. The comparison plot is saved to `{portable_paths(plot_path)}`.
+Aligned predictions are in `predictions/transnetbw_aligned.csv`; metrics and input hashes
+are in `metrics/transnetbw_summary.json` and `metrics/transnetbw_monthly.csv` under the run.
+The comparison plot is saved to `{portable_paths(plot_path)}`.
 """
-    (output / "comparison.md").write_text(report, encoding="utf-8")
+    (output / "artifacts/transnetbw_comparison.md").write_text(report, encoding="utf-8")
+    output_manifest = output / "run_manifest.json"
+    if output_manifest.exists():
+        output_metadata = json.loads(output_manifest.read_text(encoding="utf-8"))
+        output_metadata.setdefault("comparisons", {})["transnetbw"] = {
+            "metrics": "metrics/transnetbw_summary.json",
+            "predictions": "predictions/transnetbw_aligned.csv",
+            "plot": portable_paths(plot_path.resolve()),
+        }
+        output_manifest.write_text(json.dumps(output_metadata, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     print(json.dumps({key: value for key, value in summary.items() if key != "inputs"}, indent=2))
     return output
 
@@ -232,10 +248,8 @@ def main():
     parser.add_argument("--predictions", type=Path, required=True)
     parser.add_argument("--actual", type=Path, required=True)
     parser.add_argument("--forecast", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--plot", type=Path,
-                        default=Path(__file__).resolve().parents[2] / "reports/transnetbw_2025_final_comparison.png",
-                        help="Comparison plot destination; defaults to the project's single GBT plot.")
+    parser.add_argument("--output", type=Path, help="Run directory; defaults to the prediction file's run.")
+    parser.add_argument("--plot", type=Path, help="Optional plot destination; defaults to the run's plots folder.")
     args = parser.parse_args()
     compare(args.predictions, args.actual, args.forecast, args.output, args.plot)
 

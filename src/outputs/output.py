@@ -17,7 +17,7 @@ from src.config import portable_paths
 
 
 def save_run_outputs(results, output_root="outputs", run_name=None,
-                     metadata=None, stage="evaluation"):
+                     metadata=None, stage="evaluation", run_path=None):
     """Save run results and metadata in a unique UTC-based directory.
 
     Parameters
@@ -32,6 +32,9 @@ def save_run_outputs(results, output_root="outputs", run_name=None,
         Run configuration, hardware, timings, and other manifest fields.
     stage : {'evaluation', 'hpo'}, default 'evaluation'
         Select evaluation or HPO output layout.
+    run_path : pathlib.Path or None
+        Optional reserved directory within the stage root, used when a checkpoint
+        must be persisted before test observations are loaded.
 
     Returns
     -------
@@ -60,17 +63,25 @@ def save_run_outputs(results, output_root="outputs", run_name=None,
     json_options = {"indent": 2, "ensure_ascii": False, "allow_nan": False}
 
     # Create Run
-    while True:
+    while run_path is None:
         run_id = f"{timestamp}_{label}_{uuid4().hex[:12]}"
-        run_path = root / run_id
+        candidate = root / run_id
         try:
-            run_path.mkdir(exist_ok=False)
+            candidate.mkdir(exist_ok=False)
         except FileExistsError:
             continue
-        break
+        run_path = candidate
+    run_path = Path(run_path).resolve()
+    if run_path.parent != root:
+        raise ValueError("The reserved run directory must be inside the stage output root.")
+    existing_manifest = run_path / "run_manifest.json"
+    if existing_manifest.exists() and json.loads(existing_manifest.read_text(encoding="utf-8")).get("status") == "completed":
+        raise ValueError("Cannot overwrite a completed run; reserve a new directory.")
+    run_id = run_path.name
     for name in ("predictions", "metrics", "plots", "checkpoints", "artifacts", "logs"):
-        (run_path / name).mkdir()
+        (run_path / name).mkdir(exist_ok=True)
     manifest = {
+        "output_schema_version": 2,
         "run_id": run_id,
         "created_at_utc": created_at.isoformat().replace("+00:00", "Z"),
         "status": "initialized",
@@ -219,7 +230,9 @@ def save_results(run_path, results):
         rows = rows.copy()
         rows["residual"] = rows["actual"] - rows["prediction"]
         scores[split] = summarize_predictions(rows)
-        rows.to_csv(run_path / "predictions" / f"{split}.csv", index=False)
+        columns = ["split", "fold", "forecast_origin", "cutoff_timestamp",
+                   "target_timestamp", "horizon_step", "actual", "prediction", "residual"]
+        rows.reindex(columns=columns).to_csv(run_path / "predictions" / f"{split}.csv", index=False)
         path = run_path / "metrics" / f"{split}.json"
         path.write_text(json.dumps(scores[split], **json_options) + "\n", encoding="utf-8")
 
@@ -247,7 +260,9 @@ def save_results(run_path, results):
     if checkpoint_path is not None:
         source = Path(checkpoint_path)
         destination = run_path / "checkpoints" / source.name
-        if source.is_dir():
+        if source.resolve() == destination.resolve():
+            pass
+        elif source.is_dir():
             shutil.copytree(source, destination)
         else:
             shutil.copy2(source, destination)

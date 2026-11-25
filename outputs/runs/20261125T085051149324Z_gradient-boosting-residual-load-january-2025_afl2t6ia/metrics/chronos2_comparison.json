@@ -1,0 +1,76 @@
+{
+  "target": "Residual load [MWh]",
+  "units": "MWh per 15min interval",
+  "forecast": {
+    "lookback": 676,
+    "horizon": 96,
+    "step_length": 4
+  },
+  "matched_forecast_origins": 721,
+  "start_utc": "2024-12-31T23:00:00+00:00",
+  "last_interval_start_utc": "2025-01-31T22:45:00+00:00",
+  "all_forecast_pairs": {
+    "gbt": {
+      "n_predictions": 69216,
+      "unique_delivery_intervals": 2976,
+      "mae": 174.90684203401173,
+      "rmse": 226.28065828142076,
+      "bias_actual_minus_prediction": -0.024611668993764508,
+      "underprediction_total": 6052324.228472542,
+      "overprediction_total": 6054027.749753615,
+      "underprediction_fraction": 0.49992776236708275,
+      "overprediction_fraction": 0.5000722376329172
+    },
+    "chronos2": {
+      "n_predictions": 69216,
+      "unique_delivery_intervals": 2976,
+      "mae": 182.51833850814842,
+      "rmse": 253.59051201613153,
+      "bias_actual_minus_prediction": 18.19821247515025,
+      "underprediction_total": 6946398.396430001,
+      "overprediction_total": 5686790.92175,
+      "underprediction_fraction": 0.5056056403143782,
+      "overprediction_fraction": 0.49439435968562184
+    }
+  },
+  "non_overlapping_delivery": {
+    "gbt": {
+      "n_predictions": 2976,
+      "unique_delivery_intervals": 2976,
+      "mae": 173.5212115896297,
+      "rmse": 225.26417987117085,
+      "bias_actual_minus_prediction": -1.5010955770510293,
+      "underprediction_total": 255965.93262671703,
+      "overprediction_total": 260433.1930640209,
+      "underprediction_fraction": 0.5006720430107527,
+      "overprediction_fraction": 0.4993279569892473
+    },
+    "chronos2": {
+      "n_predictions": 2976,
+      "unique_delivery_intervals": 2976,
+      "mae": 196.9038608938172,
+      "rmse": 272.8430750532943,
+      "bias_actual_minus_prediction": 41.29880597446237,
+      "underprediction_total": 354445.56830000004,
+      "overprediction_total": 231540.32171999998,
+      "underprediction_fraction": 0.5883736559139785,
+      "overprediction_fraction": 0.4116263440860215
+    }
+  },
+  "delivery_policy": "Select origins spaced by one full horizon, anchored at the first test origin; one forecast per delivery interval.",
+  "pair_policy": "All hourly origin/horizon pairs; summed errors here count overlapping deliveries repeatedly and are not monthly energy volumes.",
+  "limits": "Matched final-test target, labels, dates and origins. Training, validation, features, lookback and observation availability differ. Exploratory comparison; no cost claim or published grid-load benchmark for this residual-load target.",
+  "input_hash_normalization": "CSV bytes with CRLF converted to LF, so hashes survive Git line-ending conversion.",
+  "inputs": {
+    "gbt": {
+      "run_id": "20261125T085051149324Z_gradient-boosting-residual-load-january-2025_afl2t6ia",
+      "path": "outputs/runs/20261125T085051149324Z_gradient-boosting-residual-load-january-2025_afl2t6ia",
+      "prediction_sha256": "347bffb1d33694e65bd150008e0886f1a1be2c763981a0f662e80d8fa8fb3623"
+    },
+    "chronos2": {
+      "run_id": "20261117T112048694811Z_chronos2-15min-evaluation_9284b2e63425",
+      "path": "outputs/runs/20261117T112048694811Z_chronos2-15min-evaluation_9284b2e63425",
+      "prediction_sha256": "89c2fe3f6cc03ce80da74dab965557930925439f2bb6a8c668188edd6c996fb4"
+    }
+  }
+}

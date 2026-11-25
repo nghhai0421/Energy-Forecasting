@@ -1,0 +1,99 @@
+# January residual-load comparison; parameters selected using 2023-2024 validation only.
+run_name: gradient_boosting_residual_load_january_2025
+model: gradient_boosting
+data:
+  pipeline: split_15min
+  sources:
+    consumption:
+      development: Dataset/raw/csv/Actual_consumption_2023_2024_Quarterhour.csv
+      demo: Dataset/raw/csv/Actual_consumption_2025_Quarterhour.csv
+      timestamp_column: Start date
+      timezone: Europe/Berlin
+      columns:
+      - grid load [MWh]
+      - Residual load [MWh]
+    weather:
+      development: Dataset/raw/csv/open-meteo-48.83N9.15E293m_2023_2024.csv
+      demo: Dataset/raw/csv/open-meteo-48.83N9.15E293m_2025.csv
+      timestamp_column: time
+      timezone: +02:00
+      columns:
+      - temperature_2m (°C)
+      - wind_speed_10m (km/h)
+      - dew_point_2m (°C)
+    prices:
+      development: Dataset/raw/csv/Day-ahead_prices_2023_2024_Quarterhour.csv
+      demo: Dataset/raw/csv/Day-ahead_prices_2025_Quarterhour.csv
+      timestamp_column: Start date
+      timezone: Europe/Berlin
+      columns:
+      - Germany/Luxembourg [€/MWh]
+    holidays:
+      path: Dataset/raw/csv/df_holiday.csv
+      date_column: Datum
+      timezone: Europe/Berlin
+  timestamp_column: timestamp_utc
+  target_column: Residual load [MWh]
+  frequency: 15min
+  lag_hours:
+  - 24
+  - 168
+  observation_delay_minutes: 60
+  lag_fields:
+    load: Residual load [MWh]
+    temperature: temperature_2m (°C)
+    wind: wind_speed_10m (km/h)
+    dew_point: dew_point_2m (°C)
+    price: Germany/Luxembourg [€/MWh]
+forecast:
+  lookback: 676
+  horizon: 96
+  step_length: 4
+split:
+  train_start: '2023-01-01T00:00:00+01:00'
+  test_start: '2025-01-01T00:00:00+01:00'
+  test_end: '2025-02-01T00:00:00+01:00'
+  validation_starts:
+  - '2024-04-01T00:00:00+02:00'
+  - '2024-07-01T00:00:00+02:00'
+  - '2024-10-01T00:00:00+02:00'
+output_root: outputs
+parameters:
+  learning_rate: 0.032022428000607145
+  max_iter: 150
+  max_depth: 10
+  max_leaf_nodes: 22
+  min_samples_leaf: 73
+  l2_regularization: 0.3632486956676606
+  random_state: 42
+hpo:
+  n_trials: 12
+  seed: 42
+  search_space:
+    learning_rate:
+      type: float
+      low: 0.03
+      high: 0.2
+      log: true
+    max_depth:
+      type: int
+      low: 3
+      high: 10
+    max_leaf_nodes:
+      type: int
+      low: 8
+      high: 63
+    min_samples_leaf:
+      type: int
+      low: 20
+      high: 100
+    max_iter:
+      type: int
+      low: 100
+      high: 300
+      step: 50
+    l2_regularization:
+      type: float
+      low: 0.01
+      high: 10.0
+      log: true

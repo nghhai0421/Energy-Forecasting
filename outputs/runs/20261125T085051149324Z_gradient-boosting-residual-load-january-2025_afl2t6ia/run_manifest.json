@@ -1,0 +1,363 @@
+{
+  "output_schema_version": 2,
+  "run_id": "20261125T085051149324Z_gradient-boosting-residual-load-january-2025_afl2t6ia",
+  "created_at_utc": "2026-11-25T08:51:46.463991Z",
+  "status": "completed",
+  "run_name": "gradient_boosting_residual_load_january_2025_evaluation",
+  "model": "gradient_boosting",
+  "run_stage": "evaluation",
+  "hardware": {
+    "device": "cpu",
+    "cpu_model": "13th Gen Intel(R) Core(TM) i7-13620H",
+    "logical_core_count": 16
+  },
+  "data": {
+    "pipeline": "split_15min",
+    "sources": {
+      "consumption": {
+        "development": "Dataset/raw/csv/Actual_consumption_2023_2024_Quarterhour.csv",
+        "demo": "Dataset/raw/csv/Actual_consumption_2025_Quarterhour.csv",
+        "timestamp_column": "Start date",
+        "timezone": "Europe/Berlin",
+        "columns": [
+          "grid load [MWh]",
+          "Residual load [MWh]"
+        ]
+      },
+      "weather": {
+        "development": "Dataset/raw/csv/open-meteo-48.83N9.15E293m_2023_2024.csv",
+        "demo": "Dataset/raw/csv/open-meteo-48.83N9.15E293m_2025.csv",
+        "timestamp_column": "time",
+        "timezone": "+02:00",
+        "columns": [
+          "temperature_2m (\u00b0C)",
+          "wind_speed_10m (km/h)",
+          "dew_point_2m (\u00b0C)"
+        ]
+      },
+      "prices": {
+        "development": "Dataset/raw/csv/Day-ahead_prices_2023_2024_Quarterhour.csv",
+        "demo": "Dataset/raw/csv/Day-ahead_prices_2025_Quarterhour.csv",
+        "timestamp_column": "Start date",
+        "timezone": "Europe/Berlin",
+        "columns": [
+          "Germany/Luxembourg [\u20ac/MWh]"
+        ]
+      },
+      "holidays": {
+        "path": "Dataset/raw/csv/df_holiday.csv",
+        "date_column": "Datum",
+        "timezone": "Europe/Berlin"
+      }
+    },
+    "timestamp_column": "timestamp_utc",
+    "target_column": "Residual load [MWh]",
+    "frequency": "15min",
+    "lag_hours": [
+      24,
+      168
+    ],
+    "observation_delay_minutes": 60,
+    "lag_fields": {
+      "load": "Residual load [MWh]",
+      "temperature": "temperature_2m (\u00b0C)",
+      "wind": "wind_speed_10m (km/h)",
+      "dew_point": "dew_point_2m (\u00b0C)",
+      "price": "Germany/Luxembourg [\u20ac/MWh]"
+    }
+  },
+  "forecast": {
+    "lookback": 676,
+    "horizon": 96,
+    "step_length": 4
+  },
+  "preparation": {
+    "period": "development",
+    "rows": 70176,
+    "alignment_missing_rows": {
+      "weather": 4,
+      "prices": 0
+    },
+    "imputation": {
+      "grid load [MWh]": {
+        "missing": 0,
+        "invalid_negative": 0,
+        "imputed": 0
+      },
+      "Residual load [MWh]": {
+        "missing": 1,
+        "invalid_negative": 0,
+        "imputed": 1
+      },
+      "temperature_2m (\u00b0C)": {
+        "missing": 4,
+        "invalid_negative": 0,
+        "imputed": 4
+      },
+      "wind_speed_10m (km/h)": {
+        "missing": 4,
+        "invalid_negative": 0,
+        "imputed": 4
+      },
+      "dew_point_2m (\u00b0C)": {
+        "missing": 4,
+        "invalid_negative": 0,
+        "imputed": 4
+      },
+      "Germany/Luxembourg [\u20ac/MWh]": {
+        "missing": 0,
+        "invalid_negative": 0,
+        "imputed": 0
+      }
+    },
+    "unobserved_targets": 1,
+    "start": "2022-12-31T23:00:00+00:00",
+    "end": "2024-12-31T22:45:00+00:00"
+  },
+  "training_contract": {
+    "feature_version": "split_gbt_lags_calendar_v1",
+    "feature_columns": [
+      "load_lag_24h_delay_60m",
+      "load_lag_168h_delay_60m",
+      "temperature_lag_24h_delay_60m",
+      "temperature_lag_168h_delay_60m",
+      "wind_lag_24h_delay_60m",
+      "wind_lag_168h_delay_60m",
+      "dew_point_lag_24h_delay_60m",
+      "dew_point_lag_168h_delay_60m",
+      "price_lag_24h_delay_60m",
+      "price_lag_168h_delay_60m",
+      "calendar_second_of_minute_sin",
+      "calendar_second_of_minute_cos",
+      "calendar_minute_of_hour_sin",
+      "calendar_minute_of_hour_cos",
+      "calendar_hour_of_day_sin",
+      "calendar_hour_of_day_cos",
+      "calendar_day_of_week_sin",
+      "calendar_day_of_week_cos",
+      "calendar_day_of_month_sin",
+      "calendar_day_of_month_cos",
+      "calendar_day_of_year_sin",
+      "calendar_day_of_year_cos",
+      "calendar_week_of_year_sin",
+      "calendar_week_of_year_cos",
+      "calendar_month_of_year_sin",
+      "calendar_month_of_year_cos",
+      "calendar_year",
+      "is_holiday"
+    ],
+    "development_hashes": {
+      "consumption": "979e64d9d27f037766c69b67bf24a78a1167e697a98ea4dbb22d07dce1a50cd8",
+      "weather": "c814a1a7a4a9c5d1dfb82a5a64b4beb86c49c00fa08a296e36eb16e00d686dc2",
+      "prices": "32518d06bdae26d523a924a551d452e13b3eee2f5280ca1056c2d2fb601c91d3",
+      "holidays": "4b9097a2303050ae4ce77510c2f02b8d42a11dc784e93a77511ef4bdd9197e5f"
+    },
+    "holiday_dates": [
+      "2023-01-01",
+      "2023-01-06",
+      "2023-04-07",
+      "2023-04-10",
+      "2023-05-01",
+      "2023-05-18",
+      "2023-05-29",
+      "2023-06-08",
+      "2023-10-03",
+      "2023-11-01",
+      "2023-12-25",
+      "2023-12-26",
+      "2024-01-01",
+      "2024-01-06",
+      "2024-03-29",
+      "2024-04-01",
+      "2024-05-01",
+      "2024-05-09",
+      "2024-05-20",
+      "2024-05-30",
+      "2024-10-03",
+      "2024-11-01",
+      "2024-12-25",
+      "2024-12-26",
+      "2025-01-01",
+      "2025-01-06",
+      "2025-04-18",
+      "2025-04-21",
+      "2025-05-01",
+      "2025-05-29",
+      "2025-06-09",
+      "2025-06-19",
+      "2025-10-03",
+      "2025-11-01",
+      "2025-12-25",
+      "2025-12-26"
+    ],
+    "calendar_policy": "team CSV; missing years generated with holidays.Germany(subdiv='BW')",
+    "data": {
+      "pipeline": "split_15min",
+      "timestamp_column": "timestamp_utc",
+      "target_column": "Residual load [MWh]",
+      "frequency": "15min",
+      "lag_hours": [
+        24,
+        168
+      ],
+      "observation_delay_minutes": 60,
+      "lag_fields": {
+        "load": "Residual load [MWh]",
+        "temperature": "temperature_2m (\u00b0C)",
+        "wind": "wind_speed_10m (km/h)",
+        "dew_point": "dew_point_2m (\u00b0C)",
+        "price": "Germany/Luxembourg [\u20ac/MWh]"
+      }
+    },
+    "source_settings": {
+      "consumption": {
+        "timestamp_column": "Start date",
+        "timezone": "Europe/Berlin",
+        "columns": [
+          "grid load [MWh]",
+          "Residual load [MWh]"
+        ]
+      },
+      "weather": {
+        "timestamp_column": "time",
+        "timezone": "+02:00",
+        "columns": [
+          "temperature_2m (\u00b0C)",
+          "wind_speed_10m (km/h)",
+          "dew_point_2m (\u00b0C)"
+        ]
+      },
+      "prices": {
+        "timestamp_column": "Start date",
+        "timezone": "Europe/Berlin",
+        "columns": [
+          "Germany/Luxembourg [\u20ac/MWh]"
+        ]
+      },
+      "holidays": {
+        "date_column": "Datum",
+        "timezone": "Europe/Berlin"
+      }
+    },
+    "split": {
+      "train_start": "2023-01-01T00:00:00+01:00",
+      "test_start": "2025-01-01T00:00:00+01:00",
+      "test_end": "2025-02-01T00:00:00+01:00",
+      "validation_starts": [
+        "2024-04-01T00:00:00+02:00",
+        "2024-07-01T00:00:00+02:00",
+        "2024-10-01T00:00:00+02:00"
+      ]
+    },
+    "forecast": {
+      "lookback": 676,
+      "horizon": 96,
+      "step_length": 4
+    }
+  },
+  "availability": "past observations with 60-minute configured buffer; assumed, not verified publication latency",
+  "research_holdout": "2025 excluded from fit/tuning; earlier exploratory work already inspected 2025",
+  "timing": {
+    "cv_validation": {
+      "total_eval_seconds": 5.246900399972219,
+      "mean_fit_seconds": 1.6140099000185728,
+      "mean_predict_seconds": 0.1150010999602576,
+      "averaging_unit": "validation quarter; predictions batched over non-overlapping origins"
+    },
+    "final_test": {
+      "fit_seconds": 2.1290586999966763,
+      "predict_seconds": 41.06644010072341,
+      "mean_fit_seconds": 0.0,
+      "mean_predict_seconds": 0.056957614564110144,
+      "total_eval_seconds": 53.03132359997835
+    }
+  },
+  "demo_preparation": {
+    "period": "demo",
+    "rows": 32064,
+    "alignment_missing_rows": {
+      "weather": 4,
+      "prices": 0
+    },
+    "imputation": {
+      "grid load [MWh]": {
+        "missing": 0,
+        "invalid_negative": 0,
+        "imputed": 0
+      },
+      "Residual load [MWh]": {
+        "missing": 0,
+        "invalid_negative": 0,
+        "imputed": 0
+      },
+      "temperature_2m (\u00b0C)": {
+        "missing": 4,
+        "invalid_negative": 0,
+        "imputed": 4
+      },
+      "wind_speed_10m (km/h)": {
+        "missing": 4,
+        "invalid_negative": 0,
+        "imputed": 4
+      },
+      "dew_point_2m (\u00b0C)": {
+        "missing": 4,
+        "invalid_negative": 0,
+        "imputed": 4
+      },
+      "Germany/Luxembourg [\u20ac/MWh]": {
+        "missing": 0,
+        "invalid_negative": 0,
+        "imputed": 0
+      }
+    },
+    "unobserved_targets": 0,
+    "start": "2024-12-31T23:00:00+00:00",
+    "end": "2025-11-30T22:45:00+00:00"
+  },
+  "hpo_source": "outputs\\hpo_runs\\20261125T084624127450Z_gradient-boosting-residual-load-january-2025-hpo_19b30afa2cb1",
+  "frozen_model_hash": "bf1f5a9b6205c54dfa4bf4cfedd6b4bb",
+  "checkpoint_created_before_demo": "outputs/runs/20261125T085051149324Z_gradient-boosting-residual-load-january-2025_afl2t6ia/checkpoints/model.joblib",
+  "test_source_hashes": {
+    "consumption": "d88addd6d541363d43c79c36865c8fc0de9e9b9bffeb352ac144964f75bcaa4e",
+    "weather": "a197b7831ba41eb559b847ae6c22f49a35f39ef642c68b66058ec0e2b1d325b5",
+    "prices": "3a7acedae06b1743f6867a0d5b7e0467c4176bf972fbe32f3d754228a9500b1e"
+  },
+  "updated_at_utc": "2026-11-25T08:51:47.654832Z",
+  "summary": {
+    "cv_mean_fold": {
+      "mae": 159.70515517929502,
+      "rmse": 223.09005098981973
+    },
+    "final_test": {
+      "n_predictions": 69216,
+      "mae": 174.90684203401176,
+      "rmse": 226.28065828142076,
+      "bias_actual_minus_prediction": -0.02461166899375778,
+      "underprediction_total": 6052324.228472542,
+      "overprediction_total": 6054027.749753615,
+      "underprediction_fraction": 0.49992776236708275,
+      "overprediction_fraction": 0.5000722376329172
+    },
+    "selected_parameters": {
+      "learning_rate": 0.032022428000607145,
+      "max_iter": 150,
+      "max_depth": 10,
+      "max_leaf_nodes": 22,
+      "min_samples_leaf": 73,
+      "l2_regularization": 0.3632486956676606,
+      "random_state": 42
+    },
+    "parameter_source": "hpo",
+    "validation_score": 223.09005098981973,
+    "checkpoint": "checkpoints/model.joblib"
+  },
+  "comparisons": {
+    "chronos2": {
+      "metrics": "metrics/chronos2_comparison.json",
+      "matched_pairs": "predictions/chronos2_matched_pairs.csv",
+      "unique_delivery": "predictions/chronos2_matched_delivery.csv",
+      "plot": "plots/chronos2_directional_comparison.png"
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "parameters": {
+    "learning_rate": 0.032022428000607145,
+    "max_iter": 150,
+    "max_depth": 10,
+    "max_leaf_nodes": 22,
+    "min_samples_leaf": 73,
+    "l2_regularization": 0.3632486956676606,
+    "random_state": 42
+  },
+  "source": "hpo",
+  "trial": 7,
+  "validation_score": 223.09005098981973,
+  "metric": "mean_fold_rmse",
+  "direction": "minimize",
+  "experiment_signature": "472cdffe840b527bfd294f969c20d69a536634d636d1384e2ec289a5fc2de0e3"
+}

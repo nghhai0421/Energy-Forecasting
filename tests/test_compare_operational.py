@@ -41,7 +41,7 @@ class OperationalComparisonTests(unittest.TestCase):
         output = self.root / "comparison"
         with patch("builtins.print"):
             compare(self.predictions, self.actual, self.official, output)
-        summary = json.loads((output / "summary.json").read_text())
+        summary = json.loads((output / "metrics/transnetbw_summary.json").read_text())
         self.assertEqual(summary["scored_rows"], 95)
         self.assertEqual(summary["excluded_missing_rows"], 1)
         for metrics in summary["metrics"].values():
@@ -58,9 +58,9 @@ class OperationalComparisonTests(unittest.TestCase):
         output = self.root / "comparison"
         with patch("builtins.print"):
             compare(self.predictions, self.actual, self.official, output)
-        summary = json.loads((output / "summary.json").read_text())
+        summary = json.loads((output / "metrics/transnetbw_summary.json").read_text())
         self.assertEqual(summary["scored_rows"], 96)
-        self.assertNotIn("weekly_baseline", pd.read_csv(output / "aligned_predictions.csv").columns)
+        self.assertNotIn("weekly_baseline", pd.read_csv(output / "predictions/transnetbw_aligned.csv").columns)
 
     def test_revised_actuals_rejected(self):
         raw = pd.read_csv(self.actual, sep=";")

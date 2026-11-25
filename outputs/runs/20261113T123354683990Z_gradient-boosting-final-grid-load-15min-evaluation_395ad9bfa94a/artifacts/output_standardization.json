@@ -1,0 +1,14 @@
+{
+  "original_prediction_sha256": {
+    "cv_validation": "636cfd68356c794d61e8622f1588490366a4b68399040b5864e46387aa780323",
+    "final_test": "d34448ba14feb22da9df7204b2f0f97f07b2af7464112c735d83537eff030b9c"
+  },
+  "note": "Layout/schema/derived-metric upgrade only; actual and prediction values verified unchanged. Original verification artifacts describe the historical run.",
+  "standardized_at_utc": "2026-11-25T08:53:03.517071+00:00",
+  "prediction_sha256": {
+    "cv_validation": "d8f6c5e056b48ee090cf619ba596fdda1c52accf52e7784e939732e9a7baebfb",
+    "final_test": "9fc890c3d5c2b794b270cf4ae98296a8fbd28d5a5d7aaaeda01be1d2ae83bd8a"
+  },
+  "historical_timing": "Existing measurements retained; unavailable per-origin timings are blank, not estimated.",
+  "hash_scope": "Local file bytes at migration time; Git line-ending conversion changes these byte hashes. Forecast values were compared separately."
+}

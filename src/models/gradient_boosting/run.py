@@ -2,6 +2,8 @@
 
 import hashlib
 import json
+import re
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
@@ -19,6 +21,7 @@ from src.models.gradient_boosting.process import (
     load_sources, required_history,
 )
 from src.outputs.output import save_run_outputs
+from src.outputs.plot import create_forecast_plots
 from src.config import load_run_settings, portable_paths
 
 
@@ -67,8 +70,13 @@ def validation_predictions(features, observed, parameters, folds, horizon):
         X.index = pd.RangeIndex(count, count + len(X))
         started = perf_counter()
         values = model.predict(fh=np.arange(1, len(X) + 1), X=X).to_numpy().reshape(-1)
-        timings.append(dict(fold=fold["fold"], fit_time=fit_seconds, pred_time=perf_counter() - started))
-        rows.append(prediction_rows(dates, observed, values, horizon, "cv_validation", fold["fold"]))
+        pred_seconds = perf_counter() - started
+        predicted = prediction_rows(dates, observed, values, horizon, "cv_validation", fold["fold"])
+        scores = error_summary(predicted, "prediction")
+        timings.append(dict(fold=fold["fold"], fit_time=fit_seconds, pred_time=pred_seconds,
+            test_MeanAbsoluteError=scores["mae_mwh"], test_MeanSquaredError=scores["rmse_mwh"],
+            len_train_window=count, forecast_origins=len(dates) // horizon))
+        rows.append(predicted)
     return pd.concat(rows, ignore_index=True), pd.DataFrame(timings)
 
 
@@ -85,10 +93,11 @@ def error_summary(rows, column):
 def run_split_experiment(experiment, settings, stage, hpo_run=None, run_name=None):
     dataset, split, forecast_settings = experiment["data"], experiment["split"], experiment["forecast"]
     horizon = forecast_settings["horizon"]
+    step = forecast_settings["step_length"]
     warmup = required_history(dataset)
-    if (forecast_settings["step_length"] != horizon or horizon > min(dataset["lag_hours"]) * 4
+    if (not isinstance(step, int) or not 1 <= step <= horizon or horizon > min(dataset["lag_hours"]) * 4
             or forecast_settings["lookback"] != warmup):
-        raise ValueError("Use non-overlapping horizons no longer than minimum lag and the required lookback.")
+        raise ValueError("Use step_length in [1, horizon], a horizon no longer than minimum lag and the required lookback.")
     # Development loading and tuning never open the demo CSVs.
     development, observed, state, preparation = load_sources(dataset)
     start, test_start, test_end = (boundary(split[k]) for k in ("train_start", "test_start", "test_end"))
@@ -122,6 +131,7 @@ def run_split_experiment(experiment, settings, stage, hpo_run=None, run_name=Non
     split_manifest = dict(calendar=split, cv_folds=folds, development_observations=len(development),
                           warmup_observations=warmup, strategy="expanding validation; frozen demo weights")
     metadata = dict(model=experiment["model"], run_stage="hpo", hardware={"device": "cpu"},
+                    data=dataset, forecast=forecast_settings,
                     preparation=preparation, training_contract=contract,
                     availability="past observations with 60-minute configured buffer; assumed, not verified publication latency",
                     research_holdout="2025 excluded from fit/tuning; earlier exploratory work already inspected 2025",
@@ -167,61 +177,86 @@ def run_split_experiment(experiment, settings, stage, hpo_run=None, run_name=Non
             raise ValueError("HPO development files, features or split differ from this experiment.")
         trials = pd.read_csv(hpo_path / "artifacts/hpo_trials.csv")
 
+    validation_started = perf_counter()
     validation, fold_timing = validation_predictions(features, observed, selection["parameters"], folds, horizon)
+    metadata["timing"]["cv_validation"] = dict(total_eval_seconds=perf_counter() - validation_started,
+        mean_fit_seconds=float(fold_timing.fit_time.mean()), mean_predict_seconds=float(fold_timing.pred_time.mean()),
+        averaging_unit="validation quarter; predictions batched over non-overlapping origins")
     model, count, fit_seconds = fit_model(features, observed.reindex(features.index), selection["parameters"])
     bundle = dict(forecaster=model, feature_version=FEATURE_VERSION, feature_columns=list(features), dataset=portable_paths(dataset),
                   holiday_dates=holidays, horizon=horizon, training_rows=count,
                   training_cutoff=development.index[-1].isoformat(), imputation_state=state,
                   training_history=development.tail(warmup), experiment_signature=signature)
     # Persist final weights and their training contract BEFORE opening any demo CSV.
-    checkpoint_dir = Path(output_root) / "trained_models" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ_gbt_final")
-    checkpoint_dir.mkdir(parents=True)
+    root = Path(output_root) / "runs"
+    root.mkdir(parents=True, exist_ok=True)
+    label = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:64] or "run"
+    run_path = Path(tempfile.mkdtemp(prefix=datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ_") + label + "_", dir=root))
+    for folder in ("artifacts", "checkpoints", "predictions", "metrics", "plots"):
+        (run_path / folder).mkdir()
+    write_json(run_path / "run_manifest.json", dict(run_id=run_path.name, status="evaluating",
+               model=experiment["model"], run_name=name))
+    checkpoint_dir = run_path / "checkpoints"
     checkpoint = checkpoint_dir / "model.joblib"
     joblib.dump(bundle, checkpoint)
-    write_json(checkpoint_dir / "training_manifest.json", dict(contract=contract, selection=selection,
+    write_json(run_path / "artifacts/training_manifest.json", dict(contract=contract, selection=selection,
                training_rows=count, training_cutoff=bundle["training_cutoff"], fit_seconds=fit_seconds))
     # Export development-only features for inspection and reuse in training notebooks.
-    processed = Path(dataset["sources"]["consumption"]["development"]).parents[2] / "processed" / "gbt_final_development.csv"
-    processed.parent.mkdir(exist_ok=True, parents=True)
+    processed = run_path / "artifacts/development_features.csv"
     features.assign(**{dataset["target_column"]: observed.reindex(features.index)}).to_csv(processed, index_label=dataset["timestamp_column"])
     bundle = load_forecaster(checkpoint)
     # sktime caches requested horizons during predict; compare learned estimator weights.
     before = joblib.hash(bundle["forecaster"].estimator_)
     demo, demo_actual, _, demo_preparation = load_sources(dataset, "demo", initial_state=state)
-    if demo.index[0] != test_start or demo.index[-1] >= test_end:
-        raise ValueError("Demo must begin at test_start and remain before test_end.")
+    demo = demo.loc[(demo.index >= test_start) & (demo.index < test_end)]
+    demo_actual = demo_actual.reindex(demo.index)
+    if demo.empty or demo.index[0] != test_start:
+        raise ValueError("Demo must cover test_start.")
     history = pd.concat([development.tail(warmup), demo])
-    completed = len(demo) // horizon * horizon
-    if completed == 0:
+    positions = list(range(0, len(demo) - horizon + 1, step))
+    if not positions:
         raise ValueError("Demo needs at least one full forecast horizon.")
-    values, predict_seconds = [], 0.0
+    forecasts, evaluation_rows, predict_seconds = [], [], 0.0
     first_features = None
-    for position in range(0, completed, horizon):
+    replay_started = perf_counter()
+    for position in positions:
         result = forecast(bundle, history, demo.index[position])
-        values.extend(result["prediction"].to_numpy())
+        rows = prediction_rows(result["prediction"].index, demo_actual,
+                               result["prediction"].to_numpy(), horizon, "final_test")
+        forecasts.append(rows)
+        scores = error_summary(rows, "prediction")
+        evaluation_rows.append(dict(forecast_origin=demo.index[position],
+            test_MeanAbsoluteError=scores["mae_mwh"], test_MeanSquaredError=scores["rmse_mwh"],
+            fit_time=0.0, pred_time=result["predict_seconds"], len_train_window=count))
         predict_seconds += result["predict_seconds"]
         if first_features is None:
             first_features = result["features"]
     if before != joblib.hash(bundle["forecaster"].estimator_):
         raise RuntimeError("Frozen model changed during demo replay.")
-    final = prediction_rows(demo.index[:completed], demo_actual, values, horizon, "final_test")
+    final = pd.concat(forecasts, ignore_index=True)
+    completed = positions[-1] + horizon
     split_manifest.update(test_observations=len(demo), training_rows=count, final_test=dict(
-        forecast_origins=completed // horizon, scored_observations=int(final.actual.notna().sum()),
+        forecast_origins=len(positions), scored_observations=int(final.loc[final.actual.notna(), "target_timestamp"].nunique()),
         unscored_tail_observations=len(demo) - completed,
         evaluation_range=dict(start=demo.index[0].isoformat(), end=demo.index[completed - 1].isoformat())))
     metadata.update(run_stage="evaluation", demo_preparation=demo_preparation, hpo_source=str(hpo_path) if hpo_path else None,
-                    frozen_model_hash=before, checkpoint_created_before_demo=str(checkpoint))
-    metadata["timing"]["final_test"] = dict(fit_seconds=fit_seconds, predict_seconds=predict_seconds)
+                    frozen_model_hash=before, checkpoint_created_before_demo=str(checkpoint),
+                    test_source_hashes={name: hashlib.sha256(Path(source["demo"]).read_bytes()).hexdigest()
+                                       for name, source in dataset["sources"].items() if "demo" in source})
+    metadata["timing"]["final_test"] = dict(fit_seconds=fit_seconds, predict_seconds=predict_seconds,
+        mean_fit_seconds=0.0, mean_predict_seconds=predict_seconds / len(positions),
+        total_eval_seconds=perf_counter() - replay_started)
     results = dict(predictions=pd.concat([validation, final], ignore_index=True).dropna(subset=["actual"]),
                    selected_parameters=selection, split_manifest=split_manifest, trials=trials,
-                   checkpoint_path=checkpoint, tables={"cv_validation_evaluation": fold_timing})
-    path = save_run_outputs(results, output_root, f"{name}_evaluation", metadata)
-    summary = error_summary(final, "prediction")
-    write_json(path / "metrics/energy_errors.json", summary)
+                   checkpoint_path=checkpoint, tables={"cv_validation_evaluation": fold_timing,
+                                                       "final_test_evaluation": pd.DataFrame(evaluation_rows)})
+    path = save_run_outputs(results, output_root, f"{name}_evaluation", metadata, run_path=run_path)
     write_json(path / "artifacts/experiment_config.json", experiment)
-    final.to_csv(path / "predictions/demo_all_intervals.csv", index=False)
+    if final.actual.isna().any():
+        final.loc[final.actual.isna()].to_csv(path / "artifacts/unscored_predictions.csv", index=False)
     first_features.to_csv(path / "artifacts/first_demo_features.csv", index_label=dataset["timestamp_column"])
-    print(json.dumps(summary, indent=2), flush=True)
+    series = pd.concat([observed.tail(48), demo_actual]).rename("target").rename_axis("timestamp").reset_index()
+    create_forecast_plots(path, series)
     return {"hpo": hpo_path, "evaluation": path} if stage == "all" else path
 
 
