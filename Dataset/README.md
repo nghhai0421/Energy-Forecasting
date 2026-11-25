@@ -7,6 +7,7 @@ Source: https://www.smard.de/en/downloadcenter/download-market-data/
 
 Timeframe: 01.01.2017 - 01.01.2026, Resolution = 15min
 
+<<<<<<< Updated upstream
 Region: TransnetBW, Baden-Württemberg
 
 Key Variables: 
@@ -14,6 +15,23 @@ Key Variables:
 
 ## Price data
 File: `raw/Day-ahead_prices_201701010000_202601010000_Quarterhour.xlsx`
+=======
+The supplied SMARD benchmark exports use the existing canonical files in `raw/csv/`:
+
+| Repository-relative path | Contents |
+| --- | --- |
+| `Dataset/raw/csv/Actual_consumption_202101010000_202601010000_Quarterhour.csv` | Actual grid-load export for 2021–2025 |
+| `Dataset/raw/csv/Forecasted_consumption_202101010000_202601010000_Quarterhour.csv` | Published forecast export for 2021–2025 |
+
+These are the supplied English, semicolon-separated SMARD quarter-hour exports.
+Both contain grid load and residual load in MWh and use Berlin local timestamps.
+The historical grid-load comparison selects the grid-load column; the evaluation
+overview selects residual load. No duplicate benchmark copies are retained. The TransnetBW region comes from the download selection.
+The comparison selects only delivery intervals covered by the model predictions.
+Keep these files in the documented location when sharing the checkout; no Downloads
+folder or personal username is needed. Input hashes are recorded in the generated
+comparison summary under `outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/metrics/`.
+>>>>>>> Stashed changes
 
 Source: https://www.smard.de/en/downloadcenter/download-market-data/
 

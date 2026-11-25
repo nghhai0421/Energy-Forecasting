@@ -1,0 +1,90 @@
+{
+  "scenario": "forecast-volume day-ahead procurement, no intraday adjustment, remaining imbalance settled at directional reBAP",
+  "scope": "same step-96 delivery intervals for all three models; not a full-month energy bill",
+  "intervals_per_model": 721,
+  "start_utc": "2025-01-01T22:45:00+00:00",
+  "last_interval_start_utc": "2025-01-31T22:45:00+00:00",
+  "sign_convention": "positive cost = payment; negative cost = receipt; credits column is a positive receipt magnitude",
+  "formula": "forecast * day_ahead + max(actual-forecast,0)*rebap_short - max(forecast-actual,0)*rebap_long",
+  "volume_units": "MWh per interval; no additional 0.25 multiplier",
+  "price_units": "EUR/MWh",
+  "settlement_prices_equal": true,
+  "negative_settlement_intervals": 69,
+  "missing_price_rows": 0,
+  "metrics": {
+    "Chronos-2": {
+      "actual_mwh": 1138219.5,
+      "forecast_mwh": 1106655.35155,
+      "shortage_mwh": 101177.23394,
+      "surplus_mwh": 69613.08549,
+      "procurement_eur": 137987643.4064498,
+      "shortage_settlement_eur": 13081725.4426054,
+      "surplus_settlement_eur": -6409880.137756499,
+      "settlement_eur": 6671845.3048489,
+      "settlement_charges_eur": 13817352.6974365,
+      "settlement_credits_eur": 7145507.392587599,
+      "total_cost_eur": 144659488.7112987,
+      "actual_volume_at_day_ahead_eur": 144457409.4525,
+      "cost_vs_actual_volume_at_day_ahead_eur": 202079.25879870052,
+      "savings_vs_transnetbw_eur": 1173960.176201284,
+      "savings_vs_transnetbw_percent": 0.8050006258213847,
+      "cost_per_actual_mwh": 127.09278720958366
+    },
+    "GBT": {
+      "actual_mwh": 1138219.5,
+      "forecast_mwh": 1136298.9687569474,
+      "shortage_mwh": 64116.81058188405,
+      "surplus_mwh": 62196.279338831366,
+      "procurement_eur": 141717235.97990388,
+      "shortage_settlement_eur": 8832469.155197028,
+      "surplus_settlement_eur": -4921020.450781273,
+      "settlement_eur": 3911448.704415756,
+      "settlement_charges_eur": 9468728.337463606,
+      "settlement_credits_eur": 5557279.63304785,
+      "total_cost_eur": 145628684.68431965,
+      "actual_volume_at_day_ahead_eur": 144457409.4525,
+      "cost_vs_actual_volume_at_day_ahead_eur": 1171275.2318196357,
+      "savings_vs_transnetbw_eur": 204764.2031803429,
+      "savings_vs_transnetbw_percent": 0.14040962806708615,
+      "cost_per_actual_mwh": 127.94428902713373
+    },
+    "TransnetBW": {
+      "actual_mwh": 1138219.5,
+      "forecast_mwh": 1230033.75,
+      "shortage_mwh": 7086.25,
+      "surplus_mwh": 98900.5,
+      "procurement_eur": 155049996.645,
+      "shortage_settlement_eur": 1051820.9875,
+      "surplus_settlement_eur": -10268368.745,
+      "settlement_eur": -9216547.7575,
+      "settlement_charges_eur": 1649441.9375,
+      "settlement_credits_eur": 10865989.695,
+      "total_cost_eur": 145833448.8875,
+      "actual_volume_at_day_ahead_eur": 144457409.4525,
+      "cost_vs_actual_volume_at_day_ahead_eur": 1376039.4350000008,
+      "savings_vs_transnetbw_eur": 0.0,
+      "savings_vs_transnetbw_percent": 0.0,
+      "cost_per_actual_mwh": 128.124187722579
+    }
+  },
+  "assumptions": [
+    "price-taking scenario; historical prices fixed for all models",
+    "forecast quantity treated as signed net purchase quantity",
+    "day-ahead execution feasibility and benchmark issue times not reconstructed",
+    "no intraday trades, transaction fees or taxes"
+  ],
+  "inputs": {
+    "predictions": {
+      "path": "outputs/runs/20261125T085051149324Z_gradient-boosting-residual-load-january-2025_afl2t6ia/predictions/evaluation_overview_step96.csv",
+      "sha256_lf": "b3850b55d0b1f264986140e482db2c839db517632ae3c31f1b062313efc9a129"
+    },
+    "day_ahead": {
+      "path": "Dataset/raw/csv/Day-ahead_prices_2025_Quarterhour.csv",
+      "sha256_lf": "9f2eedb21837db8db2672e002eae8198a8ec7bc0d53c6015181795fdd2491ae6"
+    },
+    "settlement": {
+      "path": "Dataset/benchmarks/settlement/rebap_2025_01.csv",
+      "sha256_lf": "f38806b3c1011edb0bd89f29d132cc1abd9add69d070a63e27d12eadca420b15"
+    }
+  }
+}

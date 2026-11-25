@@ -1,0 +1,126 @@
+{
+  "evaluation_start_inclusive": "2024-12-31T23:00:00+00:00",
+  "evaluation_end_exclusive": "2025-01-31T23:00:00+00:00",
+  "timezone": "Europe/Berlin",
+  "period_source": "configs/experiments/chronos2.yaml split, referenced by src/demo/config.yaml",
+  "period_decision": "User selected January 1-31; this supersedes the overview's original two-week window for this table.",
+  "signed_error": "prediction minus actual; opposite of saved CSV residual",
+  "accuracy_scope": "all 96 horizon steps of all 721 origins",
+  "direction_and_loss_scope": "horizon_step == 96 only; 721 quarter-hour targets, one hour apart",
+  "underprediction_weight": 0.6666666666666666,
+  "overprediction_weight": 0.3333333333333333,
+  "metrics": {
+    "Chronos-2": {
+      "mae_all_steps": 182.51833850814842,
+      "rmse_all_steps": 253.59051201613153,
+      "mean_bias_step96": -43.77829188626907,
+      "overprediction_rate_percent": 46.74063800277393,
+      "underprediction_rate_percent": 53.25936199722607,
+      "total_overprediction_mwh": 69613.08549,
+      "total_underprediction_mwh": 101177.23394,
+      "average_weighted_loss_2_to_1": 125.73627062875634,
+      "forecast_pairs": 69216,
+      "forecast_origins": 721,
+      "unique_delivery_intervals": 2976,
+      "step96_predictions": 721,
+      "exact_step96_predictions": 0
+    },
+    "GBT": {
+      "mae_all_steps": 174.90684203401173,
+      "rmse_all_steps": 226.28065828142076,
+      "mean_bias_step96": -2.663704914081396,
+      "overprediction_rate_percent": 49.65325936199723,
+      "underprediction_rate_percent": 50.34674063800277,
+      "total_overprediction_mwh": 62196.27933883137,
+      "total_underprediction_mwh": 64116.81058188405,
+      "average_weighted_loss_2_to_1": 88.0397135934348,
+      "forecast_pairs": 69216,
+      "forecast_origins": 721,
+      "unique_delivery_intervals": 2976,
+      "step96_predictions": 721,
+      "exact_step96_predictions": 0
+    },
+    "TransnetBW": {
+      "mae_all_steps": 145.6765234916782,
+      "rmse_all_steps": 169.04816559526722,
+      "mean_bias_step96": 127.34292649098474,
+      "overprediction_rate_percent": 86.40776699029125,
+      "underprediction_rate_percent": 13.453536754507628,
+      "total_overprediction_mwh": 98900.5,
+      "total_underprediction_mwh": 7086.25,
+      "average_weighted_loss_2_to_1": 52.27600554785021,
+      "forecast_pairs": 69216,
+      "unique_delivery_intervals": 2976,
+      "step96_predictions": 721,
+      "exact_step96_predictions": 1
+    }
+  },
+  "inputs": {
+    "Chronos-2": {
+      "predictions": "outputs/runs/20261117T112048694811Z_chronos2-15min-evaluation_9284b2e63425/predictions/final_test.csv",
+      "sha256_lf": "89c2fe3f6cc03ce80da74dab965557930925439f2bb6a8c668188edd6c996fb4",
+      "forecast": {
+        "lookback": 672,
+        "horizon": 96,
+        "step_length": 4
+      }
+    },
+    "GBT": {
+      "predictions": "outputs/runs/20261125T085051149324Z_gradient-boosting-residual-load-january-2025_afl2t6ia/predictions/final_test.csv",
+      "sha256_lf": "347bffb1d33694e65bd150008e0886f1a1be2c763981a0f662e80d8fa8fb3623",
+      "forecast": {
+        "lookback": 676,
+        "horizon": 96,
+        "step_length": 4
+      }
+    },
+    "TransnetBW": {
+      "actual": {
+        "path": "Dataset/raw/csv/Actual_consumption_202101010000_202601010000_Quarterhour.csv",
+        "sha256_lf": "123212e1909f9a5b7dfd602b31f8e1f230465822d2d231c301b5850f1d84190d",
+        "column": "Residual load [MWh] Original resolutions",
+        "matches_user_download": true
+      },
+      "forecast": {
+        "path": "Dataset/raw/csv/Forecasted_consumption_202101010000_202601010000_Quarterhour.csv",
+        "sha256_lf": "dfac8236629d1784a812cf0820736ea8ceb3568d699ed3f64cb88c66c191bbef",
+        "column": "Residual load [MWh] Original resolutions",
+        "matches_user_download": true
+      }
+    }
+  },
+  "checks": {
+    "Chronos-2": {
+      "complete_96_step_origins": true,
+      "one_hour_origin_spacing": true,
+      "all_targets_inside_january": true,
+      "standard_nine_column_schema": true,
+      "step96_hours_after_last_observed_interval_start": 24
+    },
+    "GBT": {
+      "complete_96_step_origins": true,
+      "one_hour_origin_spacing": true,
+      "all_targets_inside_january": true,
+      "standard_nine_column_schema": true,
+      "step96_hours_after_last_observed_interval_start": 24
+    },
+    "TransnetBW": {
+      "actuals_match_model_labels": true,
+      "missing_january_intervals": 0,
+      "issue_time_verified": false,
+      "forecast_revision_verified": false
+    }
+  },
+  "shared_keys_and_actuals_match": true,
+  "transnetbw": {
+    "status": "residual-load benchmark matched by delivery timestamp; issue time and revision unavailable",
+    "accuracy_scope": "One published forecast per delivery timestamp repeated over the same 69,216 model origin/horizon pairs for identical delivery weighting; not 69,216 distinct published forecasts.",
+    "direction_scope": "Published forecasts on the same 721 delivery intervals as model step 96; published 24-hour lead time is unverified.",
+    "all_january_unique_intervals": {
+      "n": 2976,
+      "mae": 146.42195900537635,
+      "rmse": 169.52568691011234
+    }
+  },
+  "gbt_lookback_deviation": "676 instead of 672 observations, due to 168h lag plus 60-minute observation buffer. Strict 672-row compliance requires preprocessing changes and a new fit/evaluation."
+}

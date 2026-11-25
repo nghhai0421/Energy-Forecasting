@@ -1,0 +1,13 @@
+{
+  "provider": "Netztransparenz / German transmission system operators",
+  "source_url": "https://www.netztransparenz.de/Regelenergie/Ausgleichsenergiepreis/reBAP",
+  "provided_files": [
+    "reBAP ueberdeckt [2026-11-25 10-26-40].csv",
+    "reBAP unterdeckt [2026-11-25 10-26-20].csv"
+  ],
+  "provided_files_byte_identical": true,
+  "sha256": "7eaf52f9ea2d612398d3196a36a64c37f883be95420c1061509e9b258495b334",
+  "period": "2025-01-01 through 2025-01-31 Europe/Berlin",
+  "units": "EUR/MWh",
+  "note": "Both direction columns are included in the one retained original export."
+}

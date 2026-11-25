@@ -1,0 +1,12 @@
+{
+  "tests_passed": 5,
+  "rows": 2163,
+  "intervals_per_model": 721,
+  "same_actuals_and_prices_for_all_models": true,
+  "independent_cost_identity_verified": true,
+  "charges_minus_credits_equals_net_settlement": true,
+  "interval_sums_match_summary": true,
+  "missing_price_rows": 0,
+  "negative_rebap_intervals_in_selection": 69,
+  "command": "python -m unittest discover -s tests -p test_compare_costs.py -v"
+}

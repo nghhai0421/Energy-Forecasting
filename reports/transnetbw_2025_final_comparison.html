@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.11.9">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>transnetbw_2025_final_comparison</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="transnetbw_2025_final_comparison_files/libs/clipboard/clipboard.min.js"></script>
+<script src="transnetbw_2025_final_comparison_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="transnetbw_2025_final_comparison_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="transnetbw_2025_final_comparison_files/libs/quarto-html/scrollable-regions/scrollable-regions.js" type="module"></script>
+<script src="transnetbw_2025_final_comparison_files/libs/quarto-html/popper.min.js"></script>
+<script src="transnetbw_2025_final_comparison_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="transnetbw_2025_final_comparison_files/libs/quarto-html/anchor.min.js"></script>
+<link href="transnetbw_2025_final_comparison_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="transnetbw_2025_final_comparison_files/libs/quarto-html/quarto-syntax-highlighting-63b5708e65d6cd79cd7618c58d0c21e7.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="transnetbw_2025_final_comparison_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="transnetbw_2025_final_comparison_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="transnetbw_2025_final_comparison_files/libs/bootstrap/bootstrap-943e08653f4bd8ac7ab9292bfc489267.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content" tabindex="-1">
+
+
+
+
+<section id="gradient-boosting-final-setup-and-transnetbw-comparison" class="level1">
+<h1>Gradient boosting: final setup and TransnetBW comparison</h1>
+<p>Evaluated 2026-11-13 using saved predictions. Setup and documentation consolidated 2026-11-14. This report describes the retained grid-load experiment. See the <a href="model_results.md">results index</a> for the matched GBT / Chronos-2 residual-load comparison and current artifact layout.</p>
+<section id="coverage-and-matching" class="level2">
+<h2 class="anchored" data-anchor-id="coverage-and-matching">Coverage and matching</h2>
+<ul>
+<li>Source run: <code>20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a</code>.</li>
+<li>32,064 identical quarter-hour intervals, 2025-01-01T00:00:00+01:00 through 2025-11-30T23:45:00+01:00 (interval starts).</li>
+<li>334 GBT forecast origins; each predicts 96 intervals.</li>
+<li>0 saved prediction rows excluded for missing data.</li>
+<li>Downloaded actual grid load matches saved test labels exactly within 1e-8 MWh.</li>
+<li>SMARD files use MWh per quarter-hour already; no power-to-energy conversion applied.</li>
+<li>UTC joins disambiguate repeated autumn local times. No interpolation of benchmark forecasts.</li>
+<li>Both exports use <code>grid load [MWh] Original resolutions</code>. The TransnetBW region comes from the supplied download selection; the CSV headers do not encode it.</li>
+</ul>
+</section>
+<section id="results" class="level2">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 21%">
+<col style="width: 21%">
+<col style="width: 21%">
+<col style="width: 21%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Forecast</th>
+<th style="text-align: right;">MAE (MWh/interval)</th>
+<th style="text-align: right;">RMSE (MWh/interval)</th>
+<th style="text-align: right;">Underprediction total (MWh)</th>
+<th style="text-align: right;">Overprediction total (MWh)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>GBT</td>
+<td style="text-align: right;">58.36</td>
+<td style="text-align: right;">79.08</td>
+<td style="text-align: right;">808,253.49</td>
+<td style="text-align: right;">1,063,021.11</td>
+</tr>
+<tr class="even">
+<td>Published TransnetBW forecast</td>
+<td style="text-align: right;">113.55</td>
+<td style="text-align: right;">135.40</td>
+<td style="text-align: right;">185,020.43</td>
+<td style="text-align: right;">3,455,978.70</td>
+</tr>
+</tbody>
+</table>
+<p>GBT minus published forecast relative error: <strong>-48.61% MAE</strong> and <strong>-41.60% RMSE</strong> (positive means GBT has higher error). GBT has lower absolute error in 78.24% of scored intervals; this is descriptive, not a significance test. Underprediction is max(actual minus forecast, 0); overprediction is the reverse. These measure forecasting errors, not actual purchases or balancing-account positions.</p>
+<p>The published series overpredicts in 89.70% of intervals, with signed mean error (actual minus forecast) -102.01 MWh. GBT’s signed mean error is -7.95 MWh. This systematic difference deserves investigation; its cause is not established here.</p>
+</section>
+<section id="monthly-mae" class="level2">
+<h2 class="anchored" data-anchor-id="monthly-mae">Monthly MAE</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Month</th>
+<th style="text-align: right;">GBT MAE</th>
+<th style="text-align: right;">Published forecast MAE</th>
+<th style="text-align: right;">Intervals</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>2025-01</td>
+<td style="text-align: right;">80.80</td>
+<td style="text-align: right;">139.57</td>
+<td style="text-align: right;">2,976</td>
+</tr>
+<tr class="even">
+<td>2025-02</td>
+<td style="text-align: right;">54.24</td>
+<td style="text-align: right;">103.65</td>
+<td style="text-align: right;">2,688</td>
+</tr>
+<tr class="odd">
+<td>2025-03</td>
+<td style="text-align: right;">66.44</td>
+<td style="text-align: right;">115.37</td>
+<td style="text-align: right;">2,972</td>
+</tr>
+<tr class="even">
+<td>2025-04</td>
+<td style="text-align: right;">67.02</td>
+<td style="text-align: right;">139.62</td>
+<td style="text-align: right;">2,880</td>
+</tr>
+<tr class="odd">
+<td>2025-05</td>
+<td style="text-align: right;">56.93</td>
+<td style="text-align: right;">100.53</td>
+<td style="text-align: right;">2,976</td>
+</tr>
+<tr class="even">
+<td>2025-06</td>
+<td style="text-align: right;">57.66</td>
+<td style="text-align: right;">115.14</td>
+<td style="text-align: right;">2,880</td>
+</tr>
+<tr class="odd">
+<td>2025-07</td>
+<td style="text-align: right;">42.86</td>
+<td style="text-align: right;">108.47</td>
+<td style="text-align: right;">2,976</td>
+</tr>
+<tr class="even">
+<td>2025-08</td>
+<td style="text-align: right;">59.97</td>
+<td style="text-align: right;">105.79</td>
+<td style="text-align: right;">2,976</td>
+</tr>
+<tr class="odd">
+<td>2025-09</td>
+<td style="text-align: right;">48.85</td>
+<td style="text-align: right;">126.46</td>
+<td style="text-align: right;">2,880</td>
+</tr>
+<tr class="even">
+<td>2025-10</td>
+<td style="text-align: right;">53.84</td>
+<td style="text-align: right;">105.70</td>
+<td style="text-align: right;">2,980</td>
+</tr>
+<tr class="odd">
+<td>2025-11</td>
+<td style="text-align: right;">52.73</td>
+<td style="text-align: right;">88.34</td>
+<td style="text-align: right;">2,880</td>
+</tr>
+</tbody>
+</table>
+<p>Coverage is limited to the dates above; no forecasts are extrapolated into missing months.</p>
+</section>
+<section id="what-this-answers" class="level2">
+<h2 class="anchored" data-anchor-id="what-this-answers">What this answers</h2>
+<p>The saved GBT does forecast held-out 2025 load: weights were fitted on 2023-2024, and prior 2025 observations refresh lagged inputs at later daily origins without retraining. Its accuracy can be scored against the published forecast on the same actual load and delivery timestamps. This report provides that preliminary comparison. It does not establish superiority under identical forecast-time information.</p>
+<p>The final weights were saved before opening demo observations. Forecasts use earlier 2025 observations only to refresh historical features; weights stay fixed. Although 2025 is excluded from this model’s fitting and selection, it had already been inspected during project development and is not a never-inspected research holdout.</p>
+</section>
+<section id="limits-to-the-operational-comparison" class="level2">
+<h2 class="anchored" data-anchor-id="limits-to-the-operational-comparison">Limits to the operational comparison</h2>
+<ul>
+<li>GBT issues a rolling next-24-hour forecast at 23:00 UTC (midnight in winter, 01:00 in summer); the benchmark is a day-ahead delivery-day forecast. The model may have more recent information. Lead times and issuance times are not matched.</li>
+<li>CSVs contain delivery timestamps but no forecast issue time or revision identifier. We have not established that the downloaded benchmark is the original forecast available at the intended cutoff.</li>
+<li>GBT uses lagged historical temperature, not archived weather forecasts. Different available feature sets are a limitation when interpreting an operational comparison.</li>
+<li>GBT’s lag features include a configured 60-minute availability buffer. This does not verify historical publication vintages or later revisions.</li>
+<li>ARIMA and Chronos were not evaluated on this identical 2025 setup here.</li>
+<li>Forecast accuracy is not procurement savings; no reBAP or cost model is used.</li>
+</ul>
+<p>Next: preserve this preliminary result, align issuance/horizons and data availability, add archived weather forecasts, and rerun all models under the common protocol. Once results from 2025 inform changes, further 2025 comparisons are exploratory; reserve another untouched period for a confirmatory final test.</p>
+<p>SMARD identifies forecasted consumption as a day-ahead total-load forecast. ENTSO-E documents forecast revisions and subsequent updates of TransnetBW actual load using settlement data. These support treating this as a retrospective comparison rather than a reconstruction of the original information sets. See the <a href="https://www.smard.de/resource/blob/205652/63fcff2c9813096fa2229d769da164ef/smard-user-guide-09-2021-data.pdf">SMARD user guide</a> and <a href="https://transparencyplatform.zendesk.com/hc/en-us/articles/16647979768084-Actual-Total-Load-Day-ahead-Per-Bidding-Zone-6-1-A-6-1-B">ENTSO-E load data definitions</a>.</p>
+</section>
+<section id="implementation-and-checkpoint" class="level2">
+<h2 class="anchored" data-anchor-id="implementation-and-checkpoint">Implementation and checkpoint</h2>
+<p>There is <strong>no single serialized sklearn preprocessing Pipeline</strong>. The process is explicit Python functions plus configuration and checkpoint state:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>File</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="../configs/experiments/gradient_boosting.yaml">Experiment config</a></td>
+<td>Source paths, selected raw columns, timezones, lags, delay, splits and horizons</td>
+</tr>
+<tr class="even">
+<td><a href="../src/models/gradient_boosting/process.py">process.py</a></td>
+<td>Parse/join sources, causal filling, holiday handling, timestamp checks and lag construction</td>
+</tr>
+<tr class="odd">
+<td><a href="../preprocessing/add_seasonal_features.py">add_seasonal_features.py</a></td>
+<td>Shared 17 calendar columns</td>
+</tr>
+<tr class="even">
+<td><a href="../src/models/gradient_boosting/run.py">run.py</a></td>
+<td>Development preparation, HPO, final fit, checkpoint and replay</td>
+</tr>
+<tr class="odd">
+<td><a href="../src/models/gradient_boosting/inference.py">inference.py</a></td>
+<td>Reload checkpoint, bound history, rebuild/check feature schema, predict</td>
+</tr>
+<tr class="even">
+<td><a href="../preprocessing/gbt_final_demo.ipynb">Final demo notebook</a></td>
+<td>Executed example of inference from the saved checkpoint</td>
+</tr>
+</tbody>
+</table>
+<p>Like Chronos-2, this model uses <code>run.py</code> for orchestration, <code>process.py</code> for preparation and <code>inference.py</code> for prediction. GBT learns weights locally, so it retains development-only hyperparameter search and its 2023-2024 / 2025 split. Chronos-2 uses pretrained weights and a different target/split; its scores cannot be directly ranked against this result.</p>
+<p>The <a href="../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/checkpoints/model.joblib">saved model bundle</a> contains the fitted <code>YfromX</code> forecaster, feature version and ordered names, dataset settings, holiday dates, horizon, training row count/cutoff, imputation sums/counts, last 676 prepared history rows and experiment signature. The code and compatible dependencies are still needed to recreate preprocessing. A joblib file alone does not embed the Python implementations.</p>
+</section>
+<section id="source-variables" class="level2">
+<h2 class="anchored" data-anchor-id="source-variables">Source variables</h2>
+<p>The prediction target is <strong><code>grid load [MWh]</code> per quarter-hour</strong>, not residual load or MW.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Source under <code>Dataset/raw/csv/</code></th>
+<th>Selected variables</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Actual_consumption_2023_2024_Quarterhour.csv</code></td>
+<td><code>Start date</code>, <code>grid load [MWh]</code></td>
+<td>Timestamp, target and lagged load</td>
+</tr>
+<tr class="even">
+<td><code>open-meteo-48.83N9.15E293m_2023_2024.csv</code></td>
+<td><code>time</code>, <code>temperature_2m (°C)</code>, <code>wind_speed_10m (km/h)</code>, <code>dew_point_2m (°C)</code></td>
+<td>Timestamp and three historical weather inputs at the supplied location</td>
+</tr>
+<tr class="odd">
+<td><code>Day-ahead_prices_2023_2024_Quarterhour.csv</code></td>
+<td><code>Start date</code>, <code>Germany/Luxembourg [€/MWh]</code></td>
+<td>Timestamp and historical price input</td>
+</tr>
+<tr class="even">
+<td><code>df_holiday.csv</code></td>
+<td><code>Datum</code></td>
+<td>BW holiday indicator; absent 2025 dates generated with <code>holidays.Germany(subdiv="BW")</code></td>
+</tr>
+</tbody>
+</table>
+<p>The corresponding <code>*_2025.csv</code> files provide demo observations. Their rows do not enter HPO or fitting. Later demo forecasts can use earlier 2025 observations as history.</p>
+<p>Other columns in the new files are <strong>not used</strong>: residual load, pumped storage and load including pumped storage; humidity, precipitation, radiation, sunshine duration and weather code; neighbouring-country prices; <code>End date</code>; and the holiday name. The official TransnetBW forecast is an evaluation benchmark, not a training feature. The model contains no archived weather forecasts, generation forecasts, intraday prices or reBAP input.</p>
+</section>
+<section id="preprocessing-steps" class="level2">
+<h2 class="anchored" data-anchor-id="preprocessing-steps">Preprocessing steps</h2>
+<ol type="1">
+<li>Parse consumption and prices in <code>Europe/Berlin</code>; parse weather using its configured fixed <code>+02:00</code> offset. Convert everything to UTC. Validate sorted, unique, continuous 15-minute timestamps; disambiguate the repeated autumn hour.</li>
+<li>Use consumption timestamps as the master grid and left-join the selected weather and price columns. Convert numeric values, replace infinities with missing values, and treat negative wind speed as invalid. Negative electricity prices remain valid.</li>
+<li>Fill missing historical inputs with the <strong>mean of strictly preceding valid observations</strong> of that column. This is an expanding historical mean, not forward filling or interpolation. Sums/counts from development initialize demo filling. Missing original target labels are retained separately and excluded from fitting/scoring. No leading gap without usable history is silently accepted.</li>
+<li>Build the ten lag features by timestamp. Nominal lags 24h and 168h each receive a 60-minute delay: actual lookups are <strong>25h and 169h before delivery time</strong>. The longest requires 676 quarter-hours of initial history. A lag name containing <code>24h</code> therefore does not mean an effective 24-hour offset in this experiment.</li>
+<li>Generate the calendar features in <code>Europe/Berlin</code>, including DST, and add <code>is_holiday</code> for the local delivery date.</li>
+<li>Pass the ordered numeric columns directly to the estimator. No standardization, normalization, one-hot encoding, PCA or feature selection is applied.</li>
+</ol>
+<p>The saved preparation audit reports four unmatched weather timestamps at the end of each split, filled causally in the three selected weather columns. Load and selected prices have no missing observations. The development source has 70,176 rows; after 676 warm-up rows, <strong>69,500 observed training labels</strong> remain.</p>
+</section>
+<section id="all-28-training-and-hpo-features" class="level2">
+<h2 class="anchored" data-anchor-id="all-28-training-and-hpo-features">All 28 training and HPO features</h2>
+<p>HPO used <strong>the same fixed 28 features as the final fit</strong>. There was no feature-subset search or feature-importance-based selection.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 30%">
+<col style="width: 30%">
+<col style="width: 40%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Group</th>
+<th>Exact feature names</th>
+<th style="text-align: right;">Count</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Load history</td>
+<td><code>load_lag_24h_delay_60m</code>, <code>load_lag_168h_delay_60m</code></td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td>Temperature history</td>
+<td><code>temperature_lag_24h_delay_60m</code>, <code>temperature_lag_168h_delay_60m</code></td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="odd">
+<td>Wind history</td>
+<td><code>wind_lag_24h_delay_60m</code>, <code>wind_lag_168h_delay_60m</code></td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td>Dew-point history</td>
+<td><code>dew_point_lag_24h_delay_60m</code>, <code>dew_point_lag_168h_delay_60m</code></td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="odd">
+<td>Price history</td>
+<td><code>price_lag_24h_delay_60m</code>, <code>price_lag_168h_delay_60m</code></td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td>Calendar</td>
+<td><code>calendar_second_of_minute_sin</code>, <code>calendar_second_of_minute_cos</code></td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="odd">
+<td>Calendar</td>
+<td><code>calendar_minute_of_hour_sin</code>, <code>calendar_minute_of_hour_cos</code></td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td>Calendar</td>
+<td><code>calendar_hour_of_day_sin</code>, <code>calendar_hour_of_day_cos</code></td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="odd">
+<td>Calendar</td>
+<td><code>calendar_day_of_week_sin</code>, <code>calendar_day_of_week_cos</code></td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td>Calendar</td>
+<td><code>calendar_day_of_month_sin</code>, <code>calendar_day_of_month_cos</code></td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="odd">
+<td>Calendar</td>
+<td><code>calendar_day_of_year_sin</code>, <code>calendar_day_of_year_cos</code></td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td>Calendar</td>
+<td><code>calendar_week_of_year_sin</code>, <code>calendar_week_of_year_cos</code></td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="odd">
+<td>Calendar</td>
+<td><code>calendar_month_of_year_sin</code>, <code>calendar_month_of_year_cos</code></td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td>Calendar</td>
+<td><code>calendar_year</code></td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="odd">
+<td>Holiday</td>
+<td><code>is_holiday</code></td>
+<td style="text-align: right;">1</td>
+</tr>
+</tbody>
+</table>
+<p>The timestamp is the index and the contemporaneous grid load is the label; neither is an additional input column. There is no explicit horizon-step feature. Weekday is encoded cyclically; there is no separate weekend flag in this final schema.</p>
+<p>Calendar pairs use the shared function’s <code>sin/cos(2π × component / (period−1))</code> convention, including zero-based day/month/week offsets. This differs from conventional period denominators; it was inherited, not optimized. Seconds are always zero on this grid, so that sine/cosine pair is constant. Tree models also do not extrapolate a numeric year trend beyond the training years. These are design limitations to review for a future model, not changes made to the frozen experiment.</p>
+<p>Inspect the exact ordered training table in <a href="../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/artifacts/development_features.csv">development_features.csv</a> or the first forecast’s <a href="../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/artifacts/first_demo_features.csv">feature table</a>.</p>
+</section>
+<section id="hyperparameter-selection" class="level2">
+<h2 class="anchored" data-anchor-id="hyperparameter-selection">Hyperparameter selection</h2>
+<p>Yes: <strong>12 Optuna trials</strong>, <code>TPESampler(seed=42)</code>, minimizing the arithmetic mean of the three validation-fold RMSE values. The seed fixes the sampler’s randomness; it does not make twelve trials exhaustive. The first ten trials use TPE’s default startup sampling, so this is a small search with only two later TPE-guided trials. No alternative model families or feature sets were searched.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Search range in experiment YAML</th>
+<th>Selected, trial 11 (zero-based)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>learning_rate</code></td>
+<td>0.03–0.2, logarithmic</td>
+<td>0.05337193482375701</td>
+</tr>
+<tr class="even">
+<td><code>max_depth</code></td>
+<td>Integer 3–10</td>
+<td>8</td>
+</tr>
+<tr class="odd">
+<td><code>max_leaf_nodes</code></td>
+<td>Integer 8–63</td>
+<td>59</td>
+</tr>
+<tr class="even">
+<td><code>min_samples_leaf</code></td>
+<td>Integer 20–100</td>
+<td>64</td>
+</tr>
+<tr class="odd">
+<td><code>max_iter</code></td>
+<td>100, 150, 200, 250, 300</td>
+<td>100</td>
+</tr>
+<tr class="even">
+<td><code>l2_regularization</code></td>
+<td>0.01–10, logarithmic</td>
+<td>0.01574118047380971</td>
+</tr>
+<tr class="odd">
+<td><code>random_state</code></td>
+<td>Fixed, not searched</td>
+<td>42</td>
+</tr>
+<tr class="even">
+<td><code>early_stopping</code></td>
+<td>Fixed off in code</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
+<p>The estimator is <code>HistGradientBoostingRegressor</code>, wrapped in sktime <code>YfromX</code>: <strong>one pooled tabular regression model</strong> serves all 96 horizon steps. Its default loss is squared error; model selection uses RMSE, not a monetary objective. Parameters outside the explicit configuration use library defaults. The single experiment YAML stores the selected values under <code>parameters</code> and the original search space under <code>hpo</code>. Evaluation without <code>--hpo-run</code> uses these selected values. <code>--stage hpo</code> and <code>--stage all</code> explicitly run the search again.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Fold</th>
+<th>Fit on usable history from January 2023 up to</th>
+<th>Validate on</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>April 1, 2024, exclusive</td>
+<td>April–June 2024</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>July 1, 2024, exclusive</td>
+<td>July–September 2024</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>October 1, 2024, exclusive</td>
+<td>October–December 2024</td>
+</tr>
+</tbody>
+</table>
+<p>Weights stay fixed within each validation quarter while historical lag inputs refresh. Only full 96-interval blocks are scored; four trailing intervals in the final validation fold are omitted because local-year boundaries cross DST offsets. Final fitting includes all usable development labels.</p>
+<p>The winning mean-fold RMSE is <strong>72.71880283576692 MWh</strong>. All 12 trials completed. Read the <a href="../outputs/hpo_runs/20261113T123333192472Z_gradient-boosting-final-grid-load-15min-hpo_af8e41657b18/artifacts/selected_parameters.json">selected parameters</a> and <a href="../outputs/hpo_runs/20261113T123333192472Z_gradient-boosting-final-grid-load-15min-hpo_af8e41657b18/artifacts/hpo_trials.csv">complete trial history</a>. The <a href="../configs/experiments/gradient_boosting.yaml">experiment YAML</a> defines the search; <code>run.py</code> defines the objective and folds.</p>
+</section>
+<section id="run-the-experiment" class="level2">
+<h2 class="anchored" data-anchor-id="run-the-experiment">Run the experiment</h2>
+<p>The grid-load GBT configuration is <a href="../configs/experiments/gradient_boosting.yaml">configs/experiments/gradient_boosting.yaml</a>. It contains the data contract, splits, selected model parameters and optional HPO settings. Omit <code>--mdl-cfg</code>, as with Chronos-2.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">OMP_NUM_THREADS</span> <span class="op">=</span> <span class="st">'1'</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">OPENBLAS_NUM_THREADS</span> <span class="op">=</span> <span class="st">'1'</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="va">$env</span><span class="op">:</span><span class="va">MKL_NUM_THREADS</span> <span class="op">=</span> <span class="st">'1'</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>python main<span class="op">.</span><span class="fu">py</span> <span class="op">--</span>stage evaluate <span class="op">--</span>exp-cfg configs<span class="op">/</span>experiments<span class="op">/</span>gradient_boosting<span class="op">.</span><span class="fu">yaml</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>This refits with the selected parameters and replays the 2025 data. Use <code>--stage hpo</code> to search only on development data, or <code>--stage all</code> to search, fit and evaluate. To reuse the saved search with source/feature compatibility checks, append:</p>
+<pre class="text"><code>--hpo-run outputs/hpo_runs/20261113T123333192472Z_gradient-boosting-final-grid-load-15min-hpo_af8e41657b18</code></pre>
+<p>For inference without fitting, use <a href="../preprocessing/gbt_final_demo.ipynb">the demo notebook</a>. It loads the saved checkpoint and reproduces the first two forecasts, initially using only 2024 history, then adding newly observed first-day values. Evaluation writes the standard forecast, horizon-error and residual plots under the run. The comparison command below adds the TransnetBW figure there.</p>
+<p>The <a href="../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/run_manifest.json">saved run manifest</a> records source hashes, feature order and preprocessing counts. The <a href="../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/artifacts/verification.json">verification audit</a> records the original environment and model checks. Historical configuration artifacts retain the names used when the experiment was executed; the commands here use the consolidated setup. The final evaluation, HPO selection, checkpoint and benchmark snapshots under <code>outputs/</code> are included for review. Newly generated runs remain ignored by Git.</p>
+</section>
+<section id="artifacts" class="level2">
+<h2 class="anchored" data-anchor-id="artifacts">Artifacts</h2>
+<p><code>predictions/transnetbw_aligned.csv</code>, <code>metrics/transnetbw_monthly.csv</code>, <code>metrics/transnetbw_summary.json</code> (including input hashes), and <code>plots/transnetbw_monthly_comparison.png</code> are stored in the source run. Prepared feature tables, training metadata and the checkpoint also live in that run.</p>
+</section>
+<section id="reproduce-and-inspect" class="level2">
+<h2 class="anchored" data-anchor-id="reproduce-and-inspect">Reproduce and inspect</h2>
+<p>Run commands from the repository root with the Python environment activated. The SMARD exports live in <code>Dataset/raw/csv/</code>; see the <a href="../Dataset/README.md#transnetbw-comparison-inputs">dataset overview</a>. The dated prediction path below identifies the evaluated run included in this repository. The comparison and demo notebook can use that saved run directly. After a new evaluation, replace the dated run directory with the newly created directory under <code>outputs/runs/</code>.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode powershell code-with-copy"><code class="sourceCode powershell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>python <span class="op">-</span>m src<span class="op">.</span><span class="fu">evaluation</span><span class="op">.</span><span class="fu">compare_operational</span> <span class="op">--</span>predictions outputs<span class="op">/</span>runs<span class="op">/</span>20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a<span class="op">/</span>predictions<span class="op">/</span>final_test<span class="op">.</span><span class="fu">csv</span> <span class="op">--</span>actual Dataset<span class="op">/</span>raw<span class="op">/</span>csv<span class="op">/</span>Actual_consumption_202101010000_202601010000_Quarterhour<span class="op">.</span><span class="fu">csv</span> <span class="op">--</span>forecast Dataset<span class="op">/</span>raw<span class="op">/</span>csv<span class="op">/</span>Forecasted_consumption_202101010000_202601010000_Quarterhour<span class="op">.</span><span class="fu">csv</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><a href="../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/predictions/transnetbw_aligned.csv">Aligned interval predictions</a>, <a href="../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/metrics/transnetbw_summary.json">metrics and input hashes</a>, and <a href="../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/metrics/transnetbw_monthly.csv">monthly metrics</a>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../outputs/runs/20261113T123354683990Z_gradient-boosting-final-grid-load-15min-evaluation_395ad9bfa94a/plots/transnetbw_monthly_comparison.png" class="img-fluid figure-img"></p>
+<figcaption>GBT and published TransnetBW monthly errors</figcaption>
+</figure>
+</div>
+<p>The comparison contains only GBT and the published forecast; learned model weights and saved predictions remain unchanged. GBT’s larger underprediction total means lower MAE should not be interpreted as fewer shortages under an asymmetric cost policy. No significance test was performed; quarter-hour errors are serially dependent.</p>
+</section>
+<section id="cleanup-verification-2026-11-14" class="level2">
+<h2 class="anchored" data-anchor-id="cleanup-verification-2026-11-14">Cleanup verification (2026-11-14)</h2>
+<p>The consolidated setup passes 23 current tests. A fresh evaluation using the single experiment YAML reproduced all 32,064 saved final predictions exactly and matched the retained HPO experiment signature. The saved prediction file hash is unchanged. Checkpoint packaging is described below. The updated demo notebook executes successfully and reproduces its first two forecasts. At that time, GBT training/HPO generated no plot images; the current output layout supersedes that plotting policy (see below). Tests for removed experiment implementations were removed with their implementations.</p>
+<p>Path portability was verified by reloading the exported configuration under a different checkout root. The comparison command was rerun using the repository benchmark files and reproduced the reported scores.</p>
+</section>
+<section id="review-snapshot-packaging-2026-11-15" class="level2">
+<h2 class="anchored" data-anchor-id="review-snapshot-packaging-2026-11-15">Review snapshot packaging (2026-11-15)</h2>
+<p>The retained checkpoint was reserialized with repository-relative source paths before sharing. No fitting or weight updates occurred. The two checkpoint copies were identical at packaging; the verification JSON records the original file hash, the packaged file hash and the unchanged learned-estimator hash. All report artifact links refer to the included final-run snapshots. Generated HTML previews remain local.</p>
+<p>PR validation on the updated main branch: 24 tests passed; the portable checkpoint reproduced all 32,064 saved predictions exactly, and every demo notebook code cell executed successfully.</p>
+</section>
+<section id="output-standardization-2026-11-25" class="level2">
+<h2 class="anchored" data-anchor-id="output-standardization-2026-11-25">Output standardization (2026-11-25)</h2>
+<p>The source run now uses the same nine forecast CSV columns and standard plots as Chronos-2. Actual and prediction values were verified unchanged; CSV hashes changed because obsolete baseline/deficit/surplus columns were removed. <code>artifacts/output_standardization.json</code> records both hashes. The verification and cleanup sections above describe the historical execution. The duplicate checkpoint and full demo prediction file were removed after equality checks. Legacy weekly-baseline summaries are retained under <code>artifacts/legacy_weekly_baseline_*</code>; they are outside the current comparison.</p>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+      window.quartoDecorateExternalLinks = function (root) {
+     var links = (root || window.document).querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+          if (!link.classList.contains('no-external-icon')) {
+          }
+        }
+      }
+      };
+      window.quartoDecorateExternalLinks(window.document);
+    // Esc closes the popup (WCAG 1.4.13) and focus leaving both trigger and
+    // popup closes it (WCAG 2.4.11); tippy handles neither for interactive popups.
+    const hideOnEscAndFocusOut = {
+      name: 'hideOnEscAndFocusOut',
+      defaultValue: true,
+      fn(instance) {
+        const dismiss = () => {
+          // A show scheduled by the trigger delay would otherwise reopen it
+          instance.clearDelayTimeouts();
+          instance.hide();
+        };
+        const onKeyDown = (event) => {
+          if (event.key !== 'Escape') {
+            return;
+          }
+          // Keep Esc from also reaching page handlers (e.g. reveal.js overview),
+          // except an open reveal.js slide menu, which Esc should close too.
+          // The menu handles keys only when its keyboard option is on.
+          const menuHandlesEsc = window.Reveal?.getPlugin?.('menu')?.isOpen() &&
+            window.Reveal.getConfig().menu?.keyboard !== false;
+          if (!menuHandlesEsc) {
+            event.stopPropagation();
+          }
+          if (instance.popper.contains(window.document.activeElement)) {
+            // Disabled while refocusing so the focus trigger does not reopen it
+            instance.disable();
+            instance.reference.focus();
+            instance.enable();
+          }
+          dismiss();
+        };
+        const onFocusOut = (event) => {
+          const target = event.relatedTarget;
+          if (target && !instance.reference.contains(target) &&
+              !instance.popper.contains(target)) {
+            dismiss();
+          }
+        };
+        // On the trigger too: a click trigger (code-annotations: select) has no
+        // blur handling. Attached for the instance's lifetime so leaving the
+        // trigger also cancels a show still pending on the trigger delay.
+        instance.reference.addEventListener('focusout', onFocusOut);
+        return {
+          onShow() {
+            window.document.addEventListener('keydown', onKeyDown, true);
+            instance.popper.addEventListener('focusout', onFocusOut);
+          },
+          onHide() {
+            window.document.removeEventListener('keydown', onKeyDown, true);
+            instance.popper.removeEventListener('focusout', onFocusOut);
+          },
+          onDestroy() {
+            instance.reference.removeEventListener('focusout', onFocusOut);
+          },
+        };
+      },
+    };
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+        plugins: [hideOnEscAndFocusOut],
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          // Each band is positioned against its own containing block, which is
+          // not the offsetParent of the lines, so place it from client rects.
+          const placeBand = (band, firstEl, lastEl, codeBlock) => {
+            const container = band.offsetParent;
+            if (container === null) {
+              return;
+            }
+            const containerRect = container.getBoundingClientRect();
+            // Reveal.js scales slides with a transform, so convert client
+            // pixels back to the CSS pixels of the container.
+            const scale = containerRect.height / container.offsetHeight || 1;
+            const firstRect = firstEl.getBoundingClientRect();
+            const lastRect = lastEl.getBoundingClientRect();
+            const top = (firstRect.top - containerRect.top) / scale - container.clientTop + container.scrollTop;
+            const height = (lastRect.bottom - firstRect.top) / scale;
+            band.style.top = top - 2 + "px";
+            band.style.height = height + 4 + "px";
+            if (codeBlock) {
+              // Without the copy button wrapper, the containing block is wider
+              // than the code block, so span the code block explicitly.
+              const blockRect = codeBlock.getBoundingClientRect();
+              band.style.left = (blockRect.left - containerRect.left) / scale - container.clientLeft + container.scrollLeft + "px";
+              band.style.width = blockRect.width / scale + "px";
+            }
+          };
+          if (lineIds.length > 0) {
+            const el = window.document.getElementById(lineIds[0]);
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const parent = el.parentElement.parentElement;
+            // cook up a div (if necessary) and position it
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            placeBand(div, el, lastEl, parent.closest("div.sourceCode") || parent);
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            placeBand(gutterDiv, el, lastEl);
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+  <script type="application/javascript">
+  window.quartoScrollableRegionsLabels = {"code":"Scrollable code","output":"Scrollable output"};
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

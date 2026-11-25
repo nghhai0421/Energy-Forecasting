@@ -93,6 +93,7 @@ It needs the existing numpy/pandas/scikit-learn/sktime/Optuna/plotting dependenc
 without requiring torch or pmdarima. Automatic random early-stopping splits are
 disabled; model selection uses chronological development folds only.
 
+<<<<<<< Updated upstream
 The experiment predicts the next 24 elapsed hours, refitting every 24 hours. It
 does not yet implement an auction-timed delivery-day forecast or procurement
 cost simulation. Historical weather is lagged, not treated as an archived weather
@@ -104,6 +105,15 @@ the loader rejects missing, duplicate, unsorted, or non-hourly timestamps and
 non-finite selected values. Calendar features use Europe/Berlin time, while rows
 are spaced in UTC. Lagged weather assumes no reporting delay.
 See `preprocessing/README.md` for the upstream hourly aggregation policies.
+=======
+Like Chronos-2, the model has three modules: `run.py` orchestrates the experiment,
+`process.py` prepares data, and `inference.py` loads a model and forecasts.
+GBT is trained on separate 2023-2024 files and replays January-November 2025 with
+fixed weights. Its 28 features use historical load, temperature, wind, dew point
+and price at effective 25h/169h lags, shared calendar encodings and BW holidays.
+Each origin predicts 96 quarter-hours. The target is grid load in MWh per interval;
+The January residual-load evaluation with hourly origins is reproducible from its [saved experiment configuration](outputs/runs/20261125T085051149324Z_gradient-boosting-residual-load-january-2025_afl2t6ia/artifacts/experiment_config.json). The [results index](reports/model_results.md) links both comparisons and their artifacts.
+>>>>>>> Stashed changes
 
 Validate preparation with `python -m unittest discover -s tests`.
 
