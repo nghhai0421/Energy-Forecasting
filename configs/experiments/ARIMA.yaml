@@ -10,7 +10,7 @@ data:
 
 forecast:
   horizon: 96
-  step_length: 4
+  step_length: 96
 
 split:
   test_fraction: 0.2

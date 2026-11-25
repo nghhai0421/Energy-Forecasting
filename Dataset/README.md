@@ -93,14 +93,14 @@ See the [conversion guide](../preprocessing/README.md#raw-excel-to-csv).
   - Raw columns: `Datum` (date), `Feiertag` (holiday name)
   - Mapped to `is_holiday` (`0` = regular day, `1` = BW public holiday) in the merged/preprocessed datasets
 
-### 1.5 Additional SMARD Calculated-Resolution CSV Datasets (2019–2024)
-Semicolon-delimited (`;`) SMARD exports covering `01.01.2019` – `01.01.2025`
-- `raw/csv/energy_hourly.csv`: Hourly resolution (`52,608` rows)
-- `raw/csv/energy_daily.csv`: Daily resolution (`2,192` rows)
-
-### 1.6 Dataset Splitting & Holiday Generation Notebook
-- **File**: [`preprocessing/split_raw_datasets.ipynb`](../preprocessing/split_raw_datasets.ipynb)
-- **Purpose**: Splits the 3 full-period raw Excel datasets into the 6 subsets for **`2023–2024`** (`70,176` rows each) and **`2025 (Jan–Nov)`** (`32,064` rows each) while preserving their original metadata preamble rows (`skiprows=9` for SMARD, `skiprows=3` for Open-Meteo), and generates `raw/xlsx/df_holiday.xlsx`.
+### 1.5 Forecasted Consumption
+- **File**: `raw/xlsx/Forecasted_consumption_202501010000_202512010000_Quarterhour.xlsx`
+- **Source**: [SMARD Market Data Download Center](https://www.smard.de/en/downloadcenter/download-market-data/)
+- **Region**: TransnetBW, Baden-Württemberg
+- **Resolution**: 15 minutes (`Quarterhour`), local time (`Europe/Berlin`)
+- **Key Variables**:
+  - `Residual load [MWh]` *(Target variable)*
+  - Additional columns in raw file: `Start date`, `End date`, `grid load [MWh]`, `Grid load incl. hydro pumped storage [MWh]`, `Hydro pumped storage [MWh]`
 
 ---
 

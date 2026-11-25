@@ -22,6 +22,78 @@ from src.outputs.output import save_run_outputs
 from src.outputs.plot import create_forecast_plots, create_tuning_plot
 
 
+class LowMemoryARIMA(ARIMA):
+    """sktime ARIMA adapter that passes low_memory=True to pmdarima/statsmodels fit()."""
+
+    def _fit(self, y, X, fh):
+        self._cur_y = y
+        self._cur_X = X
+        if X is not None:
+            X = X.loc[y.index]
+        y_fit = y
+        if pd.api.types.is_integer_dtype(y.index) and not isinstance(
+            y.index, pd.RangeIndex
+        ):
+            y_fit = y.reset_index(drop=True)
+            if X is not None:
+                X = X.reset_index(drop=True)
+        self._forecaster = self._instantiate_model()
+        self._forecaster.fit(y_fit, X=X, low_memory=True)
+        self._y_name = y.name
+        return self
+
+    def _predict_fixed_cutoff(self, fh, X=None, return_pred_int=False, alpha=0.05):
+        n_periods = int(fh.to_relative(self.cutoff)[-1])
+        result = self._forecaster.arima_res_.forecast(steps=n_periods, exog=X)
+        fh_abs = fh.to_absolute(self.cutoff)
+        fh_idx = fh.to_indexer(self.cutoff)
+        result = pd.Series(result).iloc[fh_idx]
+        result.index = fh_abs.to_pandas()
+        result.name = self._y_name
+        return result
+
+
+class ParallelOptunaSearchCV(ForecastingOptunaSearchCV):
+    """ForecastingOptunaSearchCV that forwards backend='loky' (n_jobs=-1) to evaluate()."""
+
+    def _run_search(self, y, X, cv, scoring, scoring_name, sampler):
+        from sktime.forecasting.model_selection._base import _fit_and_score
+
+        all_results = []
+        for param_grid_dict in self._param_grid:
+            scoring_direction = (
+                "minimize" if scoring.get_tag("lower_is_better") else "maximize"
+            )
+            study = optuna.create_study(direction=scoring_direction, sampler=sampler)
+            meta = {
+                "forecaster": self.forecaster,
+                "y": y,
+                "X": X,
+                "cv": cv,
+                "strategy": self.strategy,
+                "scoring": scoring,
+                "error_score": self.error_score,
+                "scoring_name": scoring_name,
+                "backend": self.backend,
+                "backend_params": {"n_jobs": -1},
+            }
+            for _ in range(self.n_evals):
+                trial = study.ask(param_grid_dict)
+                params = {
+                    name: trial.params[name] for name, v in param_grid_dict.items()
+                }
+                out = _fit_and_score(params, meta)
+                study.tell(trial, self._get_score(out, scoring_name))
+
+            params_list = [trial.params for trial in study.trials]
+            results = study.trials_dataframe()
+            results["params"] = params_list
+            all_results.append(results)
+
+        combined_results = pd.concat(all_results, ignore_index=True)
+        return combined_results.rename(columns={"value": f"mean_{scoring_name}"})
+
+
 def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
                    stage="evaluate", hpo_run=None):
     """Tune or evaluate SARIMA with chronological validation and held-out testing.
@@ -117,7 +189,7 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
 
     # Build Model
     cv = SlidingWindowSplitter(fh=fh, window_length=window_length, step_length=step)
-    forecaster = ARIMA(**parameters)
+    forecaster = LowMemoryARIMA(**parameters)
     rmse = MeanSquaredError(square_root=True)
 
     # Set Run Metadata
@@ -149,7 +221,7 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
         candidate_seasonal_orders = [
             tuple(seasonal_order) for seasonal_order in hpo_settings["seasonal_orders"]
         ]
-        search = ForecastingOptunaSearchCV(
+        search = ParallelOptunaSearchCV(
             forecaster=forecaster, cv=cv,
             param_grid={
                 "order": CategoricalDistribution(candidate_orders),
@@ -158,7 +230,7 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
             scoring=rmse, strategy="refit", refit=False,
             n_evals=hpo_settings["n_trials"],
             sampler=optuna.samplers.TPESampler(seed=hpo_settings["seed"]),
-            backend="threading", error_score=1e9,
+            backend="loky", error_score=1e9,
         )
         started = perf_counter()
         search.fit(development, fh=fh)
@@ -213,6 +285,7 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
     validation = evaluate(
         model.clone(), cv=cv, y=development, strategy="refit",
         scoring=[MeanAbsoluteError(), rmse], return_data=True, error_score="raise",
+        backend="loky", backend_params={"n_jobs": -1},
     )
     timing["cv_validation"] = {
         "total_eval_seconds": perf_counter() - started,
@@ -228,6 +301,7 @@ def run_experiment(exp_cfg, mdl_cfg=None, run_name=None,
     final = evaluate(
         model.clone(), cv=test_cv, y=test_history, strategy="refit",
         scoring=[MeanAbsoluteError(), rmse], return_data=True, error_score="raise",
+        backend="loky", backend_params={"n_jobs": -1},
     )
     timing["final_test"] = {
         "total_eval_seconds": perf_counter() - started,
