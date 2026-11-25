@@ -46,6 +46,8 @@ def main():
         from src.models.gradient_boosting.run import run_experiment
     elif model_name == "ARIMA":
         from src.models.ARIMA.run import run_experiment
+    elif model_name == "SARIMA":
+        from src.models.SARIMA.run import run_experiment
     elif model_name == "chronos2":
         from src.models.chronos2.run import run_experiment
     else:
